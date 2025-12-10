@@ -17,28 +17,30 @@ COPY . .
 # Build frontend
 RUN cd frontend && npm run build
 
-# Production image - use linuxserver's ffmpeg which has full NVENC support
-FROM linuxserver/ffmpeg:latest AS ffmpeg
-
-# Final production image
+# Final production image - use NVIDIA CUDA with Ubuntu 22.04
 FROM nvidia/cuda:12.2.0-runtime-ubuntu22.04
 
-# Copy ffmpeg from linuxserver image
-COPY --from=ffmpeg /usr/local/bin/ff* /usr/local/bin/
-COPY --from=ffmpeg /usr/local/lib /usr/local/lib
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Node.js and runtime dependencies
+# Install Node.js, FFmpeg (with NVENC via ubuntu-restricted-extras approach), and build tools
 RUN apt-get update && apt-get install -y \
     curl \
     gnupg \
+    software-properties-common \
     python3 \
     make \
     g++ \
-    libgomp1 \
+    && add-apt-repository ppa:ubuntuhandbook1/ffmpeg6 -y \
+    && apt-get update \
+    && apt-get install -y ffmpeg \
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
-    && rm -rf /var/lib/apt/lists/* \
-    && ldconfig
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Verify ffmpeg is installed
+RUN ffmpeg -version && ffprobe -version
 
 WORKDIR /app
 
@@ -57,7 +59,6 @@ RUN mkdir -p /app/data
 
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,video,utility
-ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
 EXPOSE 3000
 
