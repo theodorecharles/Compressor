@@ -1,5 +1,4 @@
-FROM jrottenberg/ffmpeg:6.1-nvidia2204 AS ffmpeg
-
+# Build stage for frontend
 FROM node:20-slim AS builder
 
 WORKDIR /app
@@ -18,21 +17,28 @@ COPY . .
 # Build frontend
 RUN cd frontend && npm run build
 
-# Production image
-FROM node:20-slim
+# Production image - use linuxserver's ffmpeg which has full NVENC support
+FROM linuxserver/ffmpeg:latest AS ffmpeg
 
-# Copy ffmpeg binaries from ffmpeg image
-COPY --from=ffmpeg /usr/local /usr/local
+# Final production image
+FROM nvidia/cuda:12.2.0-runtime-ubuntu22.04
 
-# Install runtime dependencies for ffmpeg and build tools for better-sqlite3
+# Copy ffmpeg from linuxserver image
+COPY --from=ffmpeg /usr/local/bin/ff* /usr/local/bin/
+COPY --from=ffmpeg /usr/local/lib /usr/local/lib
+
+# Install Node.js and runtime dependencies
 RUN apt-get update && apt-get install -y \
-    libva-drm2 \
-    libva2 \
-    libvdpau1 \
+    curl \
+    gnupg \
     python3 \
     make \
     g++ \
-    && rm -rf /var/lib/apt/lists/*
+    libgomp1 \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/* \
+    && ldconfig
 
 WORKDIR /app
 
@@ -48,6 +54,10 @@ COPY src ./src
 
 # Create data directory
 RUN mkdir -p /app/data
+
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,video,utility
+ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
 EXPOSE 3000
 
