@@ -1,0 +1,29 @@
+{
+  "name": "compressor",
+  "version": "1.0.0",
+  "description": "HEVC media transcoder with NVIDIA GPU acceleration",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "keywords": [
+    "hevc",
+    "transcoder",
+    "ffmpeg",
+    "nvenc",
+    "nvidia"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^11.6.0",
+    "chokidar": "^4.0.1",
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
+    "minimatch": "^10.0.1",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {}
+}
