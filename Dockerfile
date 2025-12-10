@@ -1,62 +1,53 @@
 # Build stage for frontend
-FROM node:20-slim AS builder
+FROM node:20-slim AS frontend-builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy frontend package files and install dependencies
 COPY frontend/package*.json ./frontend/
-
-# Install ALL dependencies (including devDependencies for building)
-RUN npm ci
 RUN cd frontend && npm ci
 
-# Copy application code
-COPY . .
-
-# Build frontend
+# Copy frontend source and build
+COPY frontend ./frontend
 RUN cd frontend && npm run build
 
-# Final production image - use NVIDIA CUDA with Ubuntu 22.04
-FROM nvidia/cuda:12.2.0-runtime-ubuntu22.04
+# Runtime stage
+FROM nvidia/cuda:12.6.3-runtime-ubuntu24.04
 
-# Prevent interactive prompts during package installation
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Install Node.js, FFmpeg (with NVENC via ubuntu-restricted-extras approach), and build tools
-RUN apt-get update && apt-get install -y \
+# Install system dependencies and ffmpeg with NVIDIA support
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
     curl \
-    gnupg \
-    software-properties-common \
+    ffmpeg \
     python3 \
     make \
     g++ \
-    && add-apt-repository ppa:ubuntuhandbook1/ffmpeg6 -y \
-    && apt-get update \
-    && apt-get install -y ffmpeg \
-    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs \
-    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Verify ffmpeg is installed
-RUN ffmpeg -version && ffprobe -version
+# Install Node.js 20.x
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs && \
+    rm -rf /var/lib/apt/lists/* && \
+    npm cache clean --force
 
+# Create app directory
 WORKDIR /app
 
-# Copy package files and install production dependencies
+# Copy package files and install production dependencies only
 COPY package*.json ./
-RUN npm ci --only=production
-
-# Copy built frontend from builder
-COPY --from=builder /app/frontend/dist ./frontend/dist
+RUN npm ci --only=production && npm cache clean --force
 
 # Copy backend source
 COPY src ./src
 
+# Copy built frontend from builder stage
+COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
+
 # Create data directory
 RUN mkdir -p /app/data
 
+# Environment variables
+ENV NODE_ENV=production
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,video,utility
 
