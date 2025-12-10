@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-slate-900 text-slate-100;
+}
+
+.card {
+  @apply bg-slate-800 rounded-lg p-6 shadow-lg;
+}
+
+.btn {
+  @apply px-4 py-2 rounded-md font-medium transition-colors duration-200;
+}
+
+.btn-primary {
+  @apply bg-green-600 hover:bg-green-700 text-white;
+}
+
+.btn-secondary {
+  @apply bg-slate-600 hover:bg-slate-700 text-white;
+}
+
+.btn-danger {
+  @apply bg-red-600 hover:bg-red-700 text-white;
+}
+
+.btn-warning {
+  @apply bg-yellow-600 hover:bg-yellow-700 text-white;
+}
+
+.input {
+  @apply bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent;
+}
+
+.select {
+  @apply bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent;
+}
+
+.badge {
+  @apply px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.badge-queued {
+  @apply bg-blue-600 text-white;
+}
+
+.badge-encoding {
+  @apply bg-yellow-600 text-white;
+}
+
+.badge-finished {
+  @apply bg-green-600 text-white;
+}
+
+.badge-skipped {
+  @apply bg-slate-600 text-white;
+}
+
+.badge-excluded {
+  @apply bg-purple-600 text-white;
+}
+
+.badge-errored {
+  @apply bg-red-600 text-white;
+}
+
+.badge-rejected {
+  @apply bg-orange-600 text-white;
+}
+
+.table {
+  @apply w-full;
+}
+
+.table th {
+  @apply text-left px-4 py-3 text-slate-400 font-medium text-sm uppercase tracking-wider border-b border-slate-700;
+}
+
+.table td {
+  @apply px-4 py-3 border-b border-slate-700;
+}
+
+.table tr:hover {
+  @apply bg-slate-700/50;
+}
