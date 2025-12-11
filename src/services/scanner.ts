@@ -91,8 +91,11 @@ export async function scanLibrary(library: Library): Promise<ScanResult> {
   logger.info(`Scanning library: ${library.name} (${library.path})`);
 
   // Update scan status
+  scanStatus.isScanning = true;
+  scanStatus.startedAt = new Date().toISOString();
   scanStatus.currentLibrary = library.name;
   scanStatus.currentLibraryId = library.id;
+  scanStatus.totalFiles = 0;
   scanStatus.processedFiles = 0;
   scanStatus.filesAdded = 0;
   scanStatus.filesSkipped = 0;
@@ -154,6 +157,22 @@ export async function scanLibrary(library: Library): Promise<ScanResult> {
   } catch (error) {
     logger.error(`Error scanning library ${library.name}: ${(error as Error).message}`);
   }
+
+  // Reset scan status
+  scanStatus.isScanning = false;
+  scanStatus.currentLibrary = null;
+  scanStatus.currentLibraryId = null;
+  scanStatus.totalFiles = 0;
+  scanStatus.processedFiles = 0;
+  scanStatus.filesAdded = 0;
+  scanStatus.filesSkipped = 0;
+  scanStatus.filesErrored = 0;
+  scanStatus.currentFile = null;
+  scanStatus.lastError = null;
+  scanStatus.startedAt = null;
+
+  // Notify clients that scan is complete
+  broadcastScanComplete();
 
   logger.info(`Library ${library.name} scan complete: ${filesAdded} added, ${filesSkipped} skipped`);
 
