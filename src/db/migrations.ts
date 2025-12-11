@@ -133,6 +133,29 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 4,
+    name: 'backfill_hourly_stats',
+    up: (db) => {
+      // Backfill hourly stats from completed files
+      // Group by hour (truncate completed_at to hour) and aggregate
+      db.exec(`
+        INSERT OR REPLACE INTO stats_hourly (hour_utc, total_files_processed, total_space_saved, files_finished, files_skipped, files_rejected, files_errored)
+        SELECT
+          strftime('%Y-%m-%dT%H:00:00Z', completed_at) as hour_utc,
+          COUNT(*) as total_files_processed,
+          COALESCE(SUM(CASE WHEN status = 'finished' AND original_size IS NOT NULL AND new_size IS NOT NULL THEN original_size - new_size ELSE 0 END), 0) as total_space_saved,
+          SUM(CASE WHEN status = 'finished' THEN 1 ELSE 0 END) as files_finished,
+          SUM(CASE WHEN status = 'skipped' THEN 1 ELSE 0 END) as files_skipped,
+          SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as files_rejected,
+          SUM(CASE WHEN status = 'errored' THEN 1 ELSE 0 END) as files_errored
+        FROM files
+        WHERE completed_at IS NOT NULL
+          AND status IN ('finished', 'skipped', 'rejected', 'errored')
+        GROUP BY strftime('%Y-%m-%dT%H:00:00Z', completed_at);
+      `);
+    },
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {
