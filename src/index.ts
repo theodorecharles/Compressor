@@ -6,6 +6,7 @@ import { startWatching, stopAllWatchers } from './services/watcher.js';
 import { startWorker, stopWorker } from './worker/encoder.js';
 import { checkFfprobe } from './services/ffprobe.js';
 import { checkFfmpegNvenc } from './services/encoder.js';
+import { initWebSocket } from './services/websocket.js';
 import config from './config.js';
 import logger from './logger.js';
 import { tmpdir } from 'os';
@@ -76,7 +77,10 @@ async function main(): Promise<void> {
   // Create and start Express app
   logger.info('Starting web server...');
   const app = createApp();
-  await startServer(app);
+  const server = await startServer(app);
+
+  // Initialize WebSocket server
+  initWebSocket(server);
 
   // Start file watchers
   logger.info('Starting file watchers...');

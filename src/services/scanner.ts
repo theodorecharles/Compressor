@@ -10,6 +10,7 @@ import {
   createFile,
   updateTodayStats,
 } from '../db/queries.js';
+import { broadcastScanProgress, broadcastScanComplete } from './websocket.js';
 import type { Library, ScanStatus, ScanResult } from '../types/index.js';
 
 // Scan status tracking
@@ -73,6 +74,9 @@ export async function scanAllLibraries(): Promise<{ totalFilesFound: number; tot
     scanStatus.currentFile = null;
     scanStatus.lastError = null;
     scanStatus.startedAt = null;
+
+    // Notify clients that scan is complete
+    broadcastScanComplete();
   }
 
   logger.info(`Scan complete: ${totalFilesFound} files found, ${totalFilesAdded} added, ${totalFilesSkipped} skipped`);
@@ -107,6 +111,9 @@ export async function scanLibrary(library: Library): Promise<ScanResult> {
 
     logger.info(`Found ${filesFound} video files in ${library.name}`);
 
+    // Broadcast initial status
+    broadcastScanProgress({ ...scanStatus });
+
     for (let i = 0; i < videoFiles.length; i++) {
       const filePath = videoFiles[i];
 
@@ -118,6 +125,12 @@ export async function scanLibrary(library: Library): Promise<ScanResult> {
       if (i > 0 && i % 1000 === 0) {
         logger.info(`Scan progress: ${i}/${videoFiles.length} files processed (${filesAdded} added, ${filesSkipped} skipped)`);
       }
+
+      // Broadcast progress every 100 files to keep clients updated without overwhelming them
+      if (i % 100 === 0) {
+        broadcastScanProgress({ ...scanStatus });
+      }
+
       try {
         const result = await processFile(filePath, library.id);
         if (result === 'added') {
@@ -137,6 +150,7 @@ export async function scanLibrary(library: Library): Promise<ScanResult> {
 
     // Mark as fully processed
     scanStatus.processedFiles = filesFound;
+    broadcastScanProgress({ ...scanStatus });
   } catch (error) {
     logger.error(`Error scanning library ${library.name}: ${(error as Error).message}`);
   }

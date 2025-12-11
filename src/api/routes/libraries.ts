@@ -13,6 +13,13 @@ import { restartWatcher } from '../../services/watcher.js';
 
 const router = Router();
 
+// GET /api/libraries/scan/status - Get current scan status
+// IMPORTANT: This route must be defined BEFORE /:id to prevent "scan" being matched as an id
+router.get('/scan/status', (_req: Request, res: Response) => {
+  const status = getScanStatus();
+  res.json(status);
+});
+
 // GET /api/libraries - List all libraries
 router.get('/', (_req: Request, res: Response) => {
   const libraries = getAllLibraries();
@@ -168,12 +175,6 @@ router.post('/:id/scan', async (req: Request, res: Response, next: NextFunction)
   } catch (error) {
     next(error);
   }
-});
-
-// GET /api/libraries/scan/status - Get current scan status
-router.get('/scan/status', (_req: Request, res: Response) => {
-  const status = getScanStatus();
-  res.json(status);
 });
 
 export default router;

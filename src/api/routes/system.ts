@@ -9,10 +9,28 @@ import type { GpuInfo } from '../../types/index.js';
 
 const router = Router();
 
+// Cache for health check results (ffprobe/nvenc availability doesn't change at runtime)
+let healthCache: { ffprobe: boolean; nvenc: boolean; checkedAt: number } | null = null;
+const HEALTH_CACHE_TTL = 60000; // 1 minute TTL
+
+async function getCachedHealthStatus(): Promise<{ ffprobe: boolean; nvenc: boolean }> {
+  const now = Date.now();
+  if (healthCache && (now - healthCache.checkedAt) < HEALTH_CACHE_TTL) {
+    return { ffprobe: healthCache.ffprobe, nvenc: healthCache.nvenc };
+  }
+
+  const [ffprobeOk, nvencOk] = await Promise.all([
+    checkFfprobe(),
+    checkFfmpegNvenc(),
+  ]);
+
+  healthCache = { ffprobe: ffprobeOk, nvenc: nvencOk, checkedAt: now };
+  return { ffprobe: ffprobeOk, nvenc: nvencOk };
+}
+
 // GET /api/system/health - Health check
 router.get('/health', async (_req: Request, res: Response) => {
-  const ffprobeOk = await checkFfprobe();
-  const nvencOk = await checkFfmpegNvenc();
+  const { ffprobe: ffprobeOk, nvenc: nvencOk } = await getCachedHealthStatus();
   const workerStatus = getWorkerStatus();
 
   const healthy = ffprobeOk && nvencOk;

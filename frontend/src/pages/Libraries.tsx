@@ -2,6 +2,7 @@ import React, { useState, useEffect, FormEvent } from 'react';
 import { getLibraries, createLibrary, updateLibrary, deleteLibrary, scanLibrary, getScanStatus } from '../api/client';
 import Modal from '../components/Modal';
 import { formatPercent } from '../utils/format';
+import { useWebSocket } from '../hooks/useWebSocket';
 import type { Library, ScanStatus } from '../types';
 
 interface ToggleSwitchProps {
@@ -33,19 +34,26 @@ export default function Libraries(): React.ReactElement {
   const [editingLibrary, setEditingLibrary] = useState<Library | null>(null);
   const [formData, setFormData] = useState({ name: '', path: '' });
   const [error, setError] = useState<string | null>(null);
-  const [scanStatus, setScanStatus] = useState<ScanStatus | null>(null);
+  const [localScanStatus, setLocalScanStatus] = useState<ScanStatus | null>(null);
+
+  // Use WebSocket for real-time scan updates
+  const { scanStatus: wsScanStatus } = useWebSocket();
+
+  // Prefer WebSocket status, fall back to local status
+  const scanStatus = wsScanStatus ?? localScanStatus;
 
   useEffect(() => {
     loadLibraries();
+    // Load initial scan status via REST (WebSocket will take over for updates)
     loadScanStatus();
-    const interval = setInterval(loadScanStatus, 1000);
-    return () => clearInterval(interval);
   }, []);
 
   async function loadScanStatus(): Promise<void> {
     try {
       const status = await getScanStatus();
-      setScanStatus(status);
+      if (status.isScanning) {
+        setLocalScanStatus(status);
+      }
     } catch {
       // Ignore errors
     }
