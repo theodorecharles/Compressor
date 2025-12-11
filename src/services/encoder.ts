@@ -106,8 +106,11 @@ export async function encodeFile(file: File): Promise<EncodeResult> {
     // Set ownership to nobody:users
     await chown(finalOutputPath, FILE_UID, FILE_GID);
 
-    // Now safe to delete original
-    await unlink(inputPath);
+    // Delete original only if it's different from the final path
+    // (they're the same when input is already .mkv)
+    if (inputPath !== finalOutputPath) {
+      await unlink(inputPath);
+    }
 
     // Clean up temp files
     await unlink(tempOutputPath);
