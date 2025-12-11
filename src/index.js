@@ -1,4 +1,5 @@
 import { initDatabase, closeDatabase } from './db/index.js';
+import { resetEncodingFiles } from './db/queries.js';
 import { createApp, startServer } from './api/index.js';
 import { scanAllLibraries } from './services/scanner.js';
 import { startWatching, stopAllWatchers } from './services/watcher.js';
@@ -16,6 +17,12 @@ async function main() {
   // Initialize database
   logger.info('Initializing database...');
   initDatabase();
+
+  // Reset any files that were left in 'encoding' state from previous run
+  const resetCount = resetEncodingFiles();
+  if (resetCount > 0) {
+    logger.info(`Reset ${resetCount} file(s) from 'encoding' back to 'queued'`);
+  }
 
   // Check FFmpeg/FFprobe availability
   logger.info('Checking FFmpeg and FFprobe...');
