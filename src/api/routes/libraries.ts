@@ -7,9 +7,11 @@ import {
   updateLibrary,
   deleteLibrary,
   getLibraryFileCount,
+  removeQueuedFilesForLibrary,
 } from '../../db/queries.js';
 import { scanLibrary, getScanStatus } from '../../services/scanner.js';
 import { restartWatcher } from '../../services/watcher.js';
+import logger from '../../logger.js';
 
 const router = Router();
 
@@ -74,6 +76,14 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     const id = createLibrary(name, path);
     const library = getLibraryById(Number(id));
 
+    // Auto-scan new library
+    if (library) {
+      logger.info(`New library ${name} created - starting scan`);
+      scanLibrary(library).catch(err => {
+        logger.error(`Scan error for new library ${id}:`, err);
+      });
+    }
+
     res.status(201).json(library);
   } catch (error) {
     next(error);
@@ -113,12 +123,31 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
     if (enabled !== undefined) updates.enabled = enabled ? 1 : 0;
     if (watch_enabled !== undefined) updates.watch_enabled = watch_enabled ? 1 : 0;
 
+    // Check if library is being disabled
+    const wasEnabled = library.enabled;
+    const isBeingDisabled = enabled === false && wasEnabled;
+    const isBeingEnabled = enabled === true && !wasEnabled;
+
     updateLibrary(id, updates);
+
+    // If library is being disabled, remove its queued files
+    if (isBeingDisabled) {
+      const removed = removeQueuedFilesForLibrary(id);
+      logger.info(`Library ${library.name} disabled - removed ${removed} queued files`);
+    }
 
     // Restart watcher if watch settings changed
     const updatedLibrary = getLibraryById(id);
     if (updatedLibrary) {
       await restartWatcher(updatedLibrary);
+
+      // If library is being re-enabled, trigger a scan
+      if (isBeingEnabled) {
+        logger.info(`Library ${library.name} enabled - starting scan`);
+        scanLibrary(updatedLibrary).catch(err => {
+          logger.error(`Scan error for library ${id}:`, err);
+        });
+      }
     }
 
     res.json(updatedLibrary);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { getStats, getSpaceSaved, getRecentActivity, getCurrentEncoding, getHealth } from '../api/client';
+import { getStats, getSpaceSaved, getRecentActivity, getCurrentEncoding, getHealth, cancelEncoding } from '../api/client';
 import { usePolling } from '../hooks/useApi';
 import StatusBadge from '../components/StatusBadge';
 import { formatBytes, formatPercent } from '../utils/format';
@@ -143,7 +143,23 @@ export default function Dashboard(): React.ReactElement {
       {/* Current Encoding */}
       {currentEncoding?.encoding && currentEncoding.file && (
         <div className="card border-l-4 border-yellow-500">
-          <h2 className="text-lg font-semibold mb-2">Currently Encoding</h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-semibold">Currently Encoding</h2>
+            <button
+              onClick={async () => {
+                if (confirm('Cancel the current encoding? The file will be marked as cancelled.')) {
+                  try {
+                    await cancelEncoding();
+                  } catch (err) {
+                    console.error('Failed to cancel:', err);
+                  }
+                }
+              }}
+              className="btn btn-danger text-sm py-1 px-3"
+            >
+              Cancel
+            </button>
+          </div>
           <p className="text-slate-300 truncate">{currentEncoding.file.file_name}</p>
           <div className="mt-2">
             <div className="flex justify-between text-sm text-slate-400 mb-1">

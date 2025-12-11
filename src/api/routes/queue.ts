@@ -9,6 +9,7 @@ import {
   getWorkerStatus,
   pauseWorker,
   resumeWorker,
+  cancelCurrentJob,
 } from '../../worker/encoder.js';
 import type { QueueSortOrder, LibraryPriority } from '../../types/index.js';
 
@@ -66,6 +67,16 @@ router.post('/resume', (_req: Request, res: Response) => {
   resumeWorker();
   const status = getWorkerStatus();
   res.json({ message: 'Queue resumed', ...status });
+});
+
+// POST /api/queue/cancel - Cancel current encoding
+router.post('/cancel', (_req: Request, res: Response) => {
+  const cancelled = cancelCurrentJob();
+  if (cancelled) {
+    res.json({ message: 'Encoding cancelled' });
+  } else {
+    res.status(400).json({ error: 'No encoding in progress to cancel' });
+  }
 });
 
 // GET /api/queue/settings - Get queue sort settings

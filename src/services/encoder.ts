@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { spawn, ChildProcess } from 'child_process';
 import { unlink, stat, copyFile, chown, rename } from 'fs/promises';
 import { dirname, basename, join } from 'path';
 import { tmpdir } from 'os';
@@ -15,8 +15,25 @@ const FILE_GID = 100;
 // Event emitter for progress updates
 let progressCallback: ProgressCallback | null = null;
 
+// Current ffmpeg process for cancellation
+let currentFfmpegProcess: ChildProcess | null = null;
+let isCancelled = false;
+
 export function setProgressCallback(callback: ProgressCallback | null): void {
   progressCallback = callback;
+}
+
+/**
+ * Cancel the current encoding
+ */
+export function cancelCurrentEncoding(): boolean {
+  if (currentFfmpegProcess) {
+    logger.info('Cancelling current encoding...');
+    isCancelled = true;
+    currentFfmpegProcess.kill('SIGTERM');
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -51,18 +68,50 @@ export async function encodeFile(file: File): Promise<EncodeResult> {
     createEncodingLog(file.id, 'ffmpeg_command', { args: ffmpegArgs });
 
     // Try hardware decode + encode first
-    let success = await runFfmpeg(ffmpegArgs, file.id, metadata.duration);
+    let result = await runFfmpeg(ffmpegArgs, file.id, metadata.duration);
+
+    // If cancelled, handle it
+    if (result === 'cancelled') {
+      logger.info(`Encoding cancelled for ${inputPath}`);
+      await unlink(tempInputPath).catch(() => {});
+      await unlink(tempOutputPath).catch(() => {});
+
+      updateFile(file.id, {
+        status: 'cancelled',
+        completed_at: new Date().toISOString(),
+      });
+
+      createEncodingLog(file.id, 'cancelled', { reason: 'User cancelled' });
+
+      return { success: false, status: 'cancelled' };
+    }
 
     // If hardware decode failed, try CPU decode
-    if (!success) {
+    if (result === 'failed') {
       logger.warn(`Hardware decode failed for ${inputPath}, trying CPU decode`);
       createEncodingLog(file.id, 'fallback_cpu_decode');
 
       const cpuArgs = buildFfmpegArgs(tempInputPath, tempOutputPath, metadata, false);
-      success = await runFfmpeg(cpuArgs, file.id, metadata.duration);
+      result = await runFfmpeg(cpuArgs, file.id, metadata.duration);
+
+      // Check for cancellation again
+      if (result === 'cancelled') {
+        logger.info(`Encoding cancelled for ${inputPath}`);
+        await unlink(tempInputPath).catch(() => {});
+        await unlink(tempOutputPath).catch(() => {});
+
+        updateFile(file.id, {
+          status: 'cancelled',
+          completed_at: new Date().toISOString(),
+        });
+
+        createEncodingLog(file.id, 'cancelled', { reason: 'User cancelled' });
+
+        return { success: false, status: 'cancelled' };
+      }
     }
 
-    if (!success) {
+    if (result === 'failed') {
       throw new Error('FFmpeg encoding failed');
     }
 
@@ -269,10 +318,12 @@ function buildFfmpegArgs(inputPath: string, outputPath: string, metadata: VideoM
 
 /**
  * Run FFmpeg with progress tracking
+ * Returns: 'success' | 'failed' | 'cancelled'
  */
-function runFfmpeg(args: string[], fileId: number, duration: number | null): Promise<boolean> {
+function runFfmpeg(args: string[], fileId: number, duration: number | null): Promise<'success' | 'failed' | 'cancelled'> {
   return new Promise((resolve) => {
     const proc = spawn(config.ffmpegPath, args);
+    currentFfmpegProcess = proc;
     let stderr = '';
 
     proc.stderr.on('data', (data: Buffer) => {
@@ -291,18 +342,28 @@ function runFfmpeg(args: string[], fileId: number, duration: number | null): Pro
       }
     });
 
-    proc.on('close', (code) => {
+    proc.on('close', (code, signal) => {
+      currentFfmpegProcess = null;
+
+      // Check if cancelled
+      if (isCancelled || signal === 'SIGTERM') {
+        isCancelled = false;
+        resolve('cancelled');
+        return;
+      }
+
       if (code === 0) {
-        resolve(true);
+        resolve('success');
       } else {
         logger.error(`FFmpeg failed with code ${code}: ${stderr.slice(-500)}`);
-        resolve(false);
+        resolve('failed');
       }
     });
 
     proc.on('error', (err) => {
+      currentFfmpegProcess = null;
       logger.error(`FFmpeg spawn error: ${err.message}`);
-      resolve(false);
+      resolve('failed');
     });
   });
 }
@@ -422,4 +483,4 @@ export async function testEncodeFile(filePath: string, testOutputDir: string): P
   }
 }
 
-export default { encodeFile, testEncodeFile, checkFfmpegNvenc, setProgressCallback };
+export default { encodeFile, testEncodeFile, checkFfmpegNvenc, setProgressCallback, cancelCurrentEncoding };

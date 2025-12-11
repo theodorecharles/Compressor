@@ -1,5 +1,5 @@
 import logger from '../logger.js';
-import { encodeFile, setProgressCallback } from '../services/encoder.js';
+import { encodeFile, setProgressCallback, cancelCurrentEncoding } from '../services/encoder.js';
 import {
   getNextQueuedFile,
   updateFile,
@@ -65,6 +65,17 @@ export function pauseWorker(): void {
 export function resumeWorker(): void {
   logger.info('Resuming encoding worker');
   isPaused = false;
+}
+
+/**
+ * Cancel the current encoding job
+ */
+export function cancelCurrentJob(): boolean {
+  if (!currentFile) {
+    return false;
+  }
+  logger.info(`Cancelling encoding for: ${currentFile.file_name}`);
+  return cancelCurrentEncoding();
 }
 
 /**
@@ -155,5 +166,6 @@ export default {
   stopWorker,
   pauseWorker,
   resumeWorker,
+  cancelCurrentJob,
   getWorkerStatus,
 };

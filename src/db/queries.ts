@@ -451,6 +451,18 @@ export function resetEncodingFiles(): number {
   return result.changes;
 }
 
+/**
+ * Remove queued files for a library (when library is disabled)
+ */
+export function removeQueuedFilesForLibrary(libraryId: number): number {
+  const db = getDb();
+  const result = db.prepare(`
+    DELETE FROM files
+    WHERE library_id = ? AND status = 'queued'
+  `).run(libraryId);
+  return result.changes;
+}
+
 export function updateFilesStatusByExclusion(pattern: string, type: string, libraryId: number | null, newStatus: string): number {
   const db = getDb();
   let query: string;

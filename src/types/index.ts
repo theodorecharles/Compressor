@@ -1,6 +1,6 @@
 // Database Models
 
-export type FileStatus = 'queued' | 'encoding' | 'finished' | 'skipped' | 'excluded' | 'errored' | 'rejected';
+export type FileStatus = 'queued' | 'encoding' | 'finished' | 'skipped' | 'excluded' | 'errored' | 'rejected' | 'cancelled';
 export type ExclusionType = 'folder' | 'pattern';
 
 // Queue sorting options
@@ -210,7 +210,7 @@ export interface ScanResult {
 
 export interface EncodeResult {
   success: boolean;
-  status?: 'finished' | 'rejected';
+  status?: 'finished' | 'rejected' | 'cancelled';
   outputSize?: number;
   spaceSaved?: number;
   error?: string;
