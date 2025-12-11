@@ -154,13 +154,18 @@ export default function Files() {
             </thead>
             <tbody>
               {files.map((file) => (
-                <tr key={file.id}>
+                <tr key={file.id} className={file.status === 'errored' ? 'bg-red-900/20' : ''}>
                   <td className="max-w-xs">
                     <button
                       onClick={() => setSelectedFile(file)}
-                      className="text-left hover:text-green-400 truncate block w-full"
+                      className={`text-left truncate block w-full ${
+                        file.status === 'errored' ? 'text-red-400 hover:text-red-300' : 'hover:text-green-400'
+                      }`}
                     >
                       {file.file_name}
+                      {file.status === 'errored' && file.error_message && (
+                        <span className="ml-2 text-xs text-red-500">(click for error details)</span>
+                      )}
                     </button>
                   </td>
                   <td>{file.library_name}</td>

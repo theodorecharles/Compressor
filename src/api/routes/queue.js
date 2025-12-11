@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   getQueuedFiles,
+  getQueuedFilesCount,
   getCurrentEncodingFile,
 } from '../../db/queries.js';
 import {
@@ -13,13 +14,20 @@ const router = Router();
 
 // GET /api/queue - Get queue status
 router.get('/', (req, res) => {
+  const limit = parseInt(req.query.limit) || 50;
+  const offset = parseInt(req.query.offset) || 0;
+
   const status = getWorkerStatus();
-  const queued = getQueuedFiles(100);
+  const queued = getQueuedFiles({ limit, offset });
+  const total = getQueuedFilesCount();
 
   res.json({
     ...status,
     queue: queued,
     queue_count: queued.length,
+    total,
+    limit,
+    offset,
   });
 });
 

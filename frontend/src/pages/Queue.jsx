@@ -2,12 +2,16 @@ import { useState, useEffect } from 'react';
 import { getQueue, pauseQueue, resumeQueue, getCurrentEncoding } from '../api/client';
 import { usePolling } from '../hooks/useApi';
 import StatusBadge from '../components/StatusBadge';
+import Modal from '../components/Modal';
 import { formatBytes, formatPercent } from '../utils/format';
 
 export default function Queue() {
   const [queue, setQueue] = useState([]);
   const [queueStatus, setQueueStatus] = useState(null);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({ limit: 50, offset: 0 });
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const { data: currentEncoding } = usePolling(getCurrentEncoding, 2000);
 
@@ -15,19 +19,27 @@ export default function Queue() {
     loadQueue();
     const interval = setInterval(loadQueue, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [pagination]);
 
   async function loadQueue() {
     try {
-      const data = await getQueue();
+      const data = await getQueue(pagination);
       setQueue(data.queue);
       setQueueStatus(data);
+      setTotal(data.total);
     } catch (err) {
       console.error('Failed to load queue:', err);
     } finally {
       setLoading(false);
     }
   }
+
+  function handlePageChange(newOffset) {
+    setPagination({ ...pagination, offset: newOffset });
+  }
+
+  const totalPages = Math.ceil(total / pagination.limit);
+  const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
 
   async function handlePause() {
     try {
@@ -87,7 +99,7 @@ export default function Queue() {
                 : 'Stopped'}
             </p>
             <p className="text-slate-400 text-sm">
-              {queue.length} files in queue
+              {total} files in queue
             </p>
           </div>
         </div>
@@ -159,10 +171,10 @@ export default function Queue() {
       {/* Queue List */}
       <div className="card">
         <h2 className="text-lg font-semibold mb-4">
-          Pending Files ({queue.length})
+          Pending Files ({total})
         </h2>
 
-        {queue.length === 0 ? (
+        {total === 0 ? (
           <div className="text-center py-8 text-slate-400">
             <p>Queue is empty!</p>
             <p className="text-sm mt-2">Add libraries and scan for files to start encoding.</p>
@@ -183,8 +195,15 @@ export default function Queue() {
               <tbody>
                 {queue.map((file, index) => (
                   <tr key={file.id}>
-                    <td className="text-slate-400">{index + 1}</td>
-                    <td className="max-w-xs truncate">{file.file_name}</td>
+                    <td className="text-slate-400">{pagination.offset + index + 1}</td>
+                    <td className="max-w-xs">
+                      <button
+                        onClick={() => setSelectedFile(file)}
+                        className="text-left hover:text-green-400 truncate block w-full"
+                      >
+                        {file.file_name}
+                      </button>
+                    </td>
                     <td>{file.library_name}</td>
                     <td>{formatBytes(file.original_size)}</td>
                     <td>{file.original_codec || '-'}</td>
@@ -200,6 +219,93 @@ export default function Queue() {
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={() => handlePageChange(pagination.offset - pagination.limit)}
+            disabled={pagination.offset === 0}
+            className="btn btn-secondary disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="text-slate-400">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={() => handlePageChange(pagination.offset + pagination.limit)}
+            disabled={currentPage >= totalPages}
+            className="btn btn-secondary disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
+
+      {/* File Detail Modal */}
+      <Modal
+        isOpen={!!selectedFile}
+        onClose={() => setSelectedFile(null)}
+        title="File Details"
+      >
+        {selectedFile && (
+          <div className="space-y-4">
+            <div>
+              <label className="text-slate-400 text-sm">Filename</label>
+              <p className="font-medium break-all">{selectedFile.file_name}</p>
+            </div>
+            <div>
+              <label className="text-slate-400 text-sm">Full Path</label>
+              <p className="font-mono text-sm break-all">{selectedFile.file_path}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-slate-400 text-sm">Original Codec</label>
+                <p>{selectedFile.original_codec || '-'}</p>
+              </div>
+              <div>
+                <label className="text-slate-400 text-sm">Original Bitrate</label>
+                <p>{selectedFile.original_bitrate ? `${(selectedFile.original_bitrate / 1000000).toFixed(2)} Mbps` : '-'}</p>
+              </div>
+              <div>
+                <label className="text-slate-400 text-sm">Resolution</label>
+                <p>{selectedFile.original_width && selectedFile.original_height
+                  ? `${selectedFile.original_width}x${selectedFile.original_height}`
+                  : '-'}</p>
+              </div>
+              <div>
+                <label className="text-slate-400 text-sm">HDR</label>
+                <p>{selectedFile.is_hdr ? 'Yes' : 'No'}</p>
+              </div>
+              <div>
+                <label className="text-slate-400 text-sm">Original Size</label>
+                <p>{formatBytes(selectedFile.original_size)}</p>
+              </div>
+              <div>
+                <label className="text-slate-400 text-sm">Library</label>
+                <p>{selectedFile.library_name}</p>
+              </div>
+            </div>
+            <div>
+              <label className="text-slate-400 text-sm">Status</label>
+              <p><StatusBadge status={selectedFile.status} /></p>
+            </div>
+            {selectedFile.skip_reason && (
+              <div>
+                <label className="text-slate-400 text-sm">Skip Reason</label>
+                <p>{selectedFile.skip_reason}</p>
+              </div>
+            )}
+            {selectedFile.error_message && (
+              <div>
+                <label className="text-slate-400 text-sm">Error</label>
+                <p className="text-red-400 font-mono text-sm whitespace-pre-wrap">{selectedFile.error_message}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

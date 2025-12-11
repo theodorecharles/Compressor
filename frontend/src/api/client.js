@@ -61,7 +61,16 @@ export const skipFile = (id, reason) => request(`/files/${id}/skip`, { method: '
 export const excludeFile = (id, reason) => request(`/files/${id}/exclude`, { method: 'POST', body: { reason } });
 
 // Queue
-export const getQueue = () => request('/queue');
+export const getQueue = (params = {}) => {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      searchParams.append(key, value);
+    }
+  });
+  const queryString = searchParams.toString();
+  return request(`/queue${queryString ? `?${queryString}` : ''}`);
+};
 export const getCurrentEncoding = () => request('/queue/current');
 export const pauseQueue = () => request('/queue/pause', { method: 'POST' });
 export const resumeQueue = () => request('/queue/resume', { method: 'POST' });

@@ -187,8 +187,8 @@ export function createFile(data) {
   const result = db.prepare(`
     INSERT INTO files (
       library_id, file_path, file_name, original_codec, original_bitrate,
-      original_size, original_width, original_height, is_hdr, status, skip_reason
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      original_size, original_width, original_height, is_hdr, status, skip_reason, error_message
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     data.library_id,
     data.file_path,
@@ -200,9 +200,43 @@ export function createFile(data) {
     data.original_height,
     data.is_hdr ? 1 : 0,
     data.status,
-    data.skip_reason || null
+    data.skip_reason || null,
+    data.error_message || null
   );
   return result.lastInsertRowid;
+}
+
+export function upsertFile(data) {
+  const db = getDb();
+  // Try to update existing file first
+  const existingFile = db.prepare('SELECT id FROM files WHERE file_path = ?').get(data.file_path);
+
+  if (existingFile) {
+    // Update the existing file with new data
+    const updateFields = [];
+    const updateValues = [];
+
+    if (data.library_id !== undefined) { updateFields.push('library_id = ?'); updateValues.push(data.library_id); }
+    if (data.file_name !== undefined) { updateFields.push('file_name = ?'); updateValues.push(data.file_name); }
+    if (data.original_codec !== undefined) { updateFields.push('original_codec = ?'); updateValues.push(data.original_codec); }
+    if (data.original_bitrate !== undefined) { updateFields.push('original_bitrate = ?'); updateValues.push(data.original_bitrate); }
+    if (data.original_size !== undefined) { updateFields.push('original_size = ?'); updateValues.push(data.original_size); }
+    if (data.original_width !== undefined) { updateFields.push('original_width = ?'); updateValues.push(data.original_width); }
+    if (data.original_height !== undefined) { updateFields.push('original_height = ?'); updateValues.push(data.original_height); }
+    if (data.is_hdr !== undefined) { updateFields.push('is_hdr = ?'); updateValues.push(data.is_hdr ? 1 : 0); }
+    if (data.status !== undefined) { updateFields.push('status = ?'); updateValues.push(data.status); }
+    if (data.skip_reason !== undefined) { updateFields.push('skip_reason = ?'); updateValues.push(data.skip_reason); }
+    if (data.error_message !== undefined) { updateFields.push('error_message = ?'); updateValues.push(data.error_message); }
+
+    updateFields.push('updated_at = CURRENT_TIMESTAMP');
+    updateValues.push(existingFile.id);
+
+    db.prepare(`UPDATE files SET ${updateFields.join(', ')} WHERE id = ?`).run(...updateValues);
+    return existingFile.id;
+  } else {
+    // Insert new file
+    return createFile(data);
+  }
 }
 
 export function updateFile(id, updates) {
@@ -250,7 +284,7 @@ export function getNextQueuedFile() {
   `).get();
 }
 
-export function getQueuedFiles(limit = 100) {
+export function getQueuedFiles({ limit = 100, offset = 0 } = {}) {
   const db = getDb();
   return db.prepare(`
     SELECT f.*, l.name as library_name
@@ -258,8 +292,14 @@ export function getQueuedFiles(limit = 100) {
     JOIN libraries l ON f.library_id = l.id
     WHERE f.status = 'queued'
     ORDER BY f.created_at ASC
-    LIMIT ?
-  `).all(limit);
+    LIMIT ? OFFSET ?
+  `).all(limit, offset);
+}
+
+export function getQueuedFilesCount() {
+  const db = getDb();
+  const row = db.prepare(`SELECT COUNT(*) as count FROM files WHERE status = 'queued'`).get();
+  return row?.count || 0;
 }
 
 export function getCurrentEncodingFile() {
@@ -439,10 +479,12 @@ export default {
   getFiles,
   getFilesCount,
   createFile,
+  upsertFile,
   updateFile,
   deleteFile,
   getNextQueuedFile,
   getQueuedFiles,
+  getQueuedFilesCount,
   getCurrentEncodingFile,
   resetEncodingFiles,
   updateFilesStatusByExclusion,
