@@ -7,11 +7,30 @@ import {
   updateLibrary,
   deleteLibrary,
   getLibraryFileCount,
+  removeQueuedFilesForLibrary,
 } from '../../db/queries.js';
-import { scanLibrary, getScanStatus } from '../../services/scanner.js';
+import { scanLibrary, getScanStatus, stopScan } from '../../services/scanner.js';
 import { restartWatcher } from '../../services/watcher.js';
+import logger from '../../logger.js';
 
 const router = Router();
+
+// GET /api/libraries/scan/status - Get current scan status
+// IMPORTANT: This route must be defined BEFORE /:id to prevent "scan" being matched as an id
+router.get('/scan/status', (_req: Request, res: Response) => {
+  const status = getScanStatus();
+  res.json(status);
+});
+
+// POST /api/libraries/scan/stop - Stop current scan
+router.post('/scan/stop', (_req: Request, res: Response) => {
+  const stopped = stopScan();
+  if (stopped) {
+    res.json({ message: 'Scan stop requested' });
+  } else {
+    res.status(400).json({ error: 'No scan in progress' });
+  }
+});
 
 // GET /api/libraries - List all libraries
 router.get('/', (_req: Request, res: Response) => {
@@ -67,6 +86,14 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     const id = createLibrary(name, path);
     const library = getLibraryById(Number(id));
 
+    // Auto-scan new library
+    if (library) {
+      logger.info(`New library ${name} created - starting scan`);
+      scanLibrary(library).catch(err => {
+        logger.error(`Scan error for new library ${id}:`, err);
+      });
+    }
+
     res.status(201).json(library);
   } catch (error) {
     next(error);
@@ -106,12 +133,31 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
     if (enabled !== undefined) updates.enabled = enabled ? 1 : 0;
     if (watch_enabled !== undefined) updates.watch_enabled = watch_enabled ? 1 : 0;
 
+    // Check if library is being disabled
+    const wasEnabled = library.enabled;
+    const isBeingDisabled = enabled === false && wasEnabled;
+    const isBeingEnabled = enabled === true && !wasEnabled;
+
     updateLibrary(id, updates);
+
+    // If library is being disabled, remove its queued files
+    if (isBeingDisabled) {
+      const removed = removeQueuedFilesForLibrary(id);
+      logger.info(`Library ${library.name} disabled - removed ${removed} queued files`);
+    }
 
     // Restart watcher if watch settings changed
     const updatedLibrary = getLibraryById(id);
     if (updatedLibrary) {
       await restartWatcher(updatedLibrary);
+
+      // If library is being re-enabled, trigger a scan
+      if (isBeingEnabled) {
+        logger.info(`Library ${library.name} enabled - starting scan`);
+        scanLibrary(updatedLibrary).catch(err => {
+          logger.error(`Scan error for library ${id}:`, err);
+        });
+      }
     }
 
     res.json(updatedLibrary);
@@ -168,12 +214,6 @@ router.post('/:id/scan', async (req: Request, res: Response, next: NextFunction)
   } catch (error) {
     next(error);
   }
-});
-
-// GET /api/libraries/scan/status - Get current scan status
-router.get('/scan/status', (_req: Request, res: Response) => {
-  const status = getScanStatus();
-  res.json(status);
 });
 
 export default router;

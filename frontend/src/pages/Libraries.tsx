@@ -1,7 +1,8 @@
 import React, { useState, useEffect, FormEvent } from 'react';
-import { getLibraries, createLibrary, updateLibrary, deleteLibrary, scanLibrary, getScanStatus } from '../api/client';
+import { getLibraries, createLibrary, updateLibrary, deleteLibrary, scanLibrary, getScanStatus, stopScan } from '../api/client';
 import Modal from '../components/Modal';
 import { formatPercent } from '../utils/format';
+import { useWebSocket } from '../hooks/useWebSocket';
 import type { Library, ScanStatus } from '../types';
 
 interface ToggleSwitchProps {
@@ -33,19 +34,43 @@ export default function Libraries(): React.ReactElement {
   const [editingLibrary, setEditingLibrary] = useState<Library | null>(null);
   const [formData, setFormData] = useState({ name: '', path: '' });
   const [error, setError] = useState<string | null>(null);
-  const [scanStatus, setScanStatus] = useState<ScanStatus | null>(null);
+  const [localScanStatus, setLocalScanStatus] = useState<ScanStatus | null>(null);
+
+  // Use WebSocket for real-time scan updates
+  const { scanStatus: wsScanStatus, isConnected: wsConnected } = useWebSocket();
+
+  // Prefer WebSocket status, fall back to local status
+  const scanStatus = wsScanStatus ?? localScanStatus;
 
   useEffect(() => {
     loadLibraries();
     loadScanStatus();
+  }, []);
+
+  // Poll for scan status when WebSocket isn't connected
+  useEffect(() => {
+    if (wsConnected) return; // Don't poll if WebSocket is working
+
     const interval = setInterval(loadScanStatus, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [wsConnected]);
+
+  // Refresh library file counts during scanning
+  useEffect(() => {
+    if (!scanStatus?.isScanning) return;
+
+    const interval = setInterval(loadLibraries, 2000);
+    return () => clearInterval(interval);
+  }, [scanStatus?.isScanning]);
 
   async function loadScanStatus(): Promise<void> {
     try {
       const status = await getScanStatus();
-      setScanStatus(status);
+      if (status.isScanning) {
+        setLocalScanStatus(status);
+      } else {
+        setLocalScanStatus(null);
+      }
     } catch {
       // Ignore errors
     }
@@ -144,45 +169,72 @@ export default function Libraries(): React.ReactElement {
       {/* Scan Status */}
       {scanStatus?.isScanning && (
         <div className="card border-l-4 border-blue-500">
-          <h2 className="text-lg font-semibold mb-4">Scanning: {scanStatus.currentLibrary}</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Scanning: {scanStatus.currentLibrary}</h2>
+            <button
+              onClick={async () => {
+                try {
+                  await stopScan();
+                  setLocalScanStatus(null); // Immediately hide the UI
+                } catch (err) {
+                  console.error('Failed to stop scan:', err);
+                }
+              }}
+              className="btn btn-danger text-sm py-1 px-3"
+            >
+              Stop
+            </button>
+          </div>
           <div className="space-y-4">
-            {/* Progress bar */}
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span>Progress</span>
-                <span>{scanStatus.processedFiles.toLocaleString()} / {scanStatus.totalFiles.toLocaleString()} files</span>
+            {/* Finding files state */}
+            {scanStatus.totalFiles < 0 ? (
+              <div className="flex items-center gap-3">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                <span className="text-slate-300">Finding video files...</span>
               </div>
-              <div className="w-full bg-slate-700 rounded-full h-4">
-                <div
-                  className="bg-blue-500 h-4 rounded-full transition-all duration-500 flex items-center justify-center text-xs font-medium"
-                  style={{ width: `${Math.max((scanStatus.processedFiles / scanStatus.totalFiles) * 100, 1)}%` }}
-                >
-                  {scanStatus.totalFiles > 0 ? formatPercent((scanStatus.processedFiles / scanStatus.totalFiles) * 100) : '0%'}
+            ) : (
+              <>
+                {/* Progress bar */}
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>Progress</span>
+                    <span>{scanStatus.processedFiles.toLocaleString()} / {scanStatus.totalFiles.toLocaleString()} files</span>
+                  </div>
+                  <div className="w-full bg-slate-700 rounded-full h-4">
+                    <div
+                      className="bg-blue-500 h-4 rounded-full transition-all duration-500 flex items-center justify-center text-xs font-medium"
+                      style={{ width: `${scanStatus.totalFiles > 0 ? Math.max((scanStatus.processedFiles / scanStatus.totalFiles) * 100, 1) : 0}%` }}
+                    >
+                      {scanStatus.totalFiles > 0 ? formatPercent((scanStatus.processedFiles / scanStatus.totalFiles) * 100) : '0%'}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              <div>
-                <span className="text-slate-400">Added:</span>{' '}
-                <span className="text-green-400">{scanStatus.filesAdded.toLocaleString()}</span>
-              </div>
-              <div>
-                <span className="text-slate-400">Skipped:</span>{' '}
-                <span className="text-yellow-400">{scanStatus.filesSkipped.toLocaleString()}</span>
-              </div>
-              <div>
-                <span className="text-slate-400">Errors:</span>{' '}
-                <span className="text-red-400">{scanStatus.filesErrored.toLocaleString()}</span>
-              </div>
-            </div>
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="text-slate-400">Added:</span>{' '}
+                    <span className="text-green-400">{scanStatus.filesAdded.toLocaleString()}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400">Skipped:</span>{' '}
+                    <span className="text-yellow-400">{scanStatus.filesSkipped.toLocaleString()}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400">Errors:</span>{' '}
+                    <span className="text-red-400">{scanStatus.filesErrored.toLocaleString()}</span>
+                  </div>
+                </div>
 
-            {/* Current file */}
-            <div>
-              <span className="text-slate-400 text-sm">Current file:</span>
-              <p className="font-mono text-xs text-slate-300 truncate">{scanStatus.currentFile}</p>
-            </div>
+                {/* Current file */}
+                {scanStatus.currentFile && (
+                  <div>
+                    <span className="text-slate-400 text-sm">Current file:</span>
+                    <p className="font-mono text-xs text-slate-300 truncate">{scanStatus.currentFile}</p>
+                  </div>
+                )}
+              </>
+            )}
 
             {/* Last error */}
             {scanStatus.lastError && (

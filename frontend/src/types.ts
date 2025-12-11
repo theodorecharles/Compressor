@@ -1,7 +1,9 @@
 // API Types for Frontend
 
-export type FileStatus = 'queued' | 'encoding' | 'finished' | 'skipped' | 'excluded' | 'errored' | 'rejected';
+export type FileStatus = 'queued' | 'encoding' | 'finished' | 'skipped' | 'excluded' | 'errored' | 'rejected' | 'cancelled';
 export type ExclusionType = 'folder' | 'pattern';
+export type QueueSortOrder = 'bitrate_desc' | 'bitrate_asc' | 'alphabetical' | 'random';
+export type LibraryPriority = 'alphabetical_asc' | 'alphabetical_desc' | 'round_robin';
 
 export interface Library {
   id: number;
@@ -71,11 +73,14 @@ export interface Stats {
 }
 
 export interface SpaceSavedData {
-  date: string;
-  daily_saved: number;
+  timestamp: string;
+  period_saved: number;
   cumulative_saved: number;
   files_processed: number;
+  granularity: 'hourly' | 'daily';
 }
+
+export type TimeRange = '24h' | '7d' | '30d' | '90d' | '1y' | 'all';
 
 export interface RecentActivity {
   id: number;
@@ -194,4 +199,11 @@ export interface PathExclusionResult {
     reason: string | null;
     libraryId: number | null;
   }[];
+}
+
+export interface QueueSettings {
+  sort_order: QueueSortOrder;
+  library_priority: LibraryPriority;
+  available_sort_orders: QueueSortOrder[];
+  available_library_priorities: LibraryPriority[];
 }

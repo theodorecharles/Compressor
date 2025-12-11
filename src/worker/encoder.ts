@@ -1,9 +1,10 @@
 import logger from '../logger.js';
-import { encodeFile, setProgressCallback } from '../services/encoder.js';
+import { encodeFile, setProgressCallback, cancelCurrentEncoding } from '../services/encoder.js';
 import {
   getNextQueuedFile,
   updateFile,
   resetEncodingFiles,
+  updateLastLibraryId,
 } from '../db/queries.js';
 import type { File, WorkerStatus } from '../types/index.js';
 
@@ -64,6 +65,17 @@ export function pauseWorker(): void {
 export function resumeWorker(): void {
   logger.info('Resuming encoding worker');
   isPaused = false;
+}
+
+/**
+ * Cancel the current encoding job
+ */
+export function cancelCurrentJob(): boolean {
+  if (!currentFile) {
+    return false;
+  }
+  logger.info(`Cancelling encoding for: ${currentFile.file_name}`);
+  return cancelCurrentEncoding();
 }
 
 /**
@@ -131,6 +143,9 @@ async function workerLoop(): Promise<void> {
       });
     }
 
+    // Update last library ID for round-robin tracking
+    updateLastLibraryId(file.library_id);
+
     currentFile = null;
     currentProgress = 0;
 
@@ -151,5 +166,6 @@ export default {
   stopWorker,
   pauseWorker,
   resumeWorker,
+  cancelCurrentJob,
   getWorkerStatus,
 };

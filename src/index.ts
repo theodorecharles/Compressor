@@ -6,8 +6,35 @@ import { startWatching, stopAllWatchers } from './services/watcher.js';
 import { startWorker, stopWorker } from './worker/encoder.js';
 import { checkFfprobe } from './services/ffprobe.js';
 import { checkFfmpegNvenc } from './services/encoder.js';
+import { initWebSocket } from './services/websocket.js';
 import config from './config.js';
 import logger from './logger.js';
+import { tmpdir } from 'os';
+import { readdir, unlink } from 'fs/promises';
+import { join } from 'path';
+
+async function cleanupTempFiles(): Promise<number> {
+  const tempDir = tmpdir();
+  let cleaned = 0;
+
+  try {
+    const files = await readdir(tempDir);
+    for (const file of files) {
+      if (file.startsWith('compressor-') && (file.includes('-input.') || file.includes('-output.'))) {
+        try {
+          await unlink(join(tempDir, file));
+          cleaned++;
+        } catch {
+          // Ignore errors for individual files
+        }
+      }
+    }
+  } catch (error) {
+    logger.warn(`Failed to clean temp directory: ${(error as Error).message}`);
+  }
+
+  return cleaned;
+}
 
 async function main(): Promise<void> {
   logger.info('='.repeat(50));
@@ -22,6 +49,12 @@ async function main(): Promise<void> {
   const resetCount = resetEncodingFiles();
   if (resetCount > 0) {
     logger.info(`Reset ${resetCount} file(s) from 'encoding' back to 'queued'`);
+  }
+
+  // Clean up any leftover temp files from previous run
+  const cleanedCount = await cleanupTempFiles();
+  if (cleanedCount > 0) {
+    logger.info(`Cleaned up ${cleanedCount} leftover temp file(s)`);
   }
 
   // Check FFmpeg/FFprobe availability
@@ -44,7 +77,10 @@ async function main(): Promise<void> {
   // Create and start Express app
   logger.info('Starting web server...');
   const app = createApp();
-  await startServer(app);
+  const server = await startServer(app);
+
+  // Initialize WebSocket server
+  initWebSocket(server);
 
   // Start file watchers
   logger.info('Starting file watchers...');

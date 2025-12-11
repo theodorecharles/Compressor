@@ -13,6 +13,7 @@ const statusClasses: Record<FileStatus, string> = {
   excluded: 'badge-excluded',
   errored: 'badge-errored',
   rejected: 'badge-rejected',
+  cancelled: 'badge-cancelled',
 };
 
 export default function StatusBadge({ status }: StatusBadgeProps): React.ReactElement {

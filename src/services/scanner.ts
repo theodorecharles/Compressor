@@ -10,6 +10,7 @@ import {
   createFile,
   updateTodayStats,
 } from '../db/queries.js';
+import { broadcastScanProgress, broadcastScanComplete } from './websocket.js';
 import type { Library, ScanStatus, ScanResult } from '../types/index.js';
 
 // Scan status tracking
@@ -26,6 +27,21 @@ const scanStatus: ScanStatus = {
   lastError: null,
   startedAt: null,
 };
+
+// Flag to stop scan
+let stopScanRequested = false;
+
+/**
+ * Request to stop the current scan
+ */
+export function stopScan(): boolean {
+  if (!scanStatus.isScanning) {
+    return false;
+  }
+  logger.info('Stop scan requested');
+  stopScanRequested = true;
+  return true;
+}
 
 /**
  * Get current scan status
@@ -73,6 +89,9 @@ export async function scanAllLibraries(): Promise<{ totalFilesFound: number; tot
     scanStatus.currentFile = null;
     scanStatus.lastError = null;
     scanStatus.startedAt = null;
+
+    // Notify clients that scan is complete
+    broadcastScanComplete();
   }
 
   logger.info(`Scan complete: ${totalFilesFound} files found, ${totalFilesAdded} added, ${totalFilesSkipped} skipped`);
@@ -87,8 +106,11 @@ export async function scanLibrary(library: Library): Promise<ScanResult> {
   logger.info(`Scanning library: ${library.name} (${library.path})`);
 
   // Update scan status
+  scanStatus.isScanning = true;
+  scanStatus.startedAt = new Date().toISOString();
   scanStatus.currentLibrary = library.name;
   scanStatus.currentLibraryId = library.id;
+  scanStatus.totalFiles = -1; // -1 indicates "finding files"
   scanStatus.processedFiles = 0;
   scanStatus.filesAdded = 0;
   scanStatus.filesSkipped = 0;
@@ -96,18 +118,32 @@ export async function scanLibrary(library: Library): Promise<ScanResult> {
   scanStatus.currentFile = null;
   scanStatus.lastError = null;
 
+  // Broadcast immediately so UI shows "finding files" state
+  broadcastScanProgress({ ...scanStatus });
+
   let filesFound = 0;
   let filesAdded = 0;
   let filesSkipped = 0;
 
   try {
+    logger.info(`Finding video files in ${library.path}...`);
     const videoFiles = await findVideoFiles(library.path);
     filesFound = videoFiles.length;
     scanStatus.totalFiles = filesFound;
 
     logger.info(`Found ${filesFound} video files in ${library.name}`);
 
+    // Broadcast that we found the files
+    broadcastScanProgress({ ...scanStatus });
+
     for (let i = 0; i < videoFiles.length; i++) {
+      // Check if stop was requested
+      if (stopScanRequested) {
+        logger.info(`Scan stopped by user at ${i}/${videoFiles.length} files`);
+        stopScanRequested = false;
+        break;
+      }
+
       const filePath = videoFiles[i];
 
       // Update progress
@@ -118,6 +154,10 @@ export async function scanLibrary(library: Library): Promise<ScanResult> {
       if (i > 0 && i % 1000 === 0) {
         logger.info(`Scan progress: ${i}/${videoFiles.length} files processed (${filesAdded} added, ${filesSkipped} skipped)`);
       }
+
+      // Broadcast progress for every file
+      broadcastScanProgress({ ...scanStatus });
+
       try {
         const result = await processFile(filePath, library.id);
         if (result === 'added') {
@@ -137,9 +177,26 @@ export async function scanLibrary(library: Library): Promise<ScanResult> {
 
     // Mark as fully processed
     scanStatus.processedFiles = filesFound;
+    broadcastScanProgress({ ...scanStatus });
   } catch (error) {
     logger.error(`Error scanning library ${library.name}: ${(error as Error).message}`);
   }
+
+  // Reset scan status
+  scanStatus.isScanning = false;
+  scanStatus.currentLibrary = null;
+  scanStatus.currentLibraryId = null;
+  scanStatus.totalFiles = 0;
+  scanStatus.processedFiles = 0;
+  scanStatus.filesAdded = 0;
+  scanStatus.filesSkipped = 0;
+  scanStatus.filesErrored = 0;
+  scanStatus.currentFile = null;
+  scanStatus.lastError = null;
+  scanStatus.startedAt = null;
+
+  // Notify clients that scan is complete
+  broadcastScanComplete();
 
   logger.info(`Library ${library.name} scan complete: ${filesAdded} added, ${filesSkipped} skipped`);
 

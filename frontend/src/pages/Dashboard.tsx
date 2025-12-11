@@ -1,14 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { getStats, getSpaceSaved, getRecentActivity, getCurrentEncoding, getHealth } from '../api/client';
+import { getStats, getSpaceSaved, getRecentActivity, getCurrentEncoding, getHealth, cancelEncoding } from '../api/client';
 import { usePolling } from '../hooks/useApi';
 import StatusBadge from '../components/StatusBadge';
 import { formatBytes, formatPercent } from '../utils/format';
-import type { Stats, RecentActivity, HealthStatus, SpaceSavedData, CurrentEncoding } from '../types';
+import type { Stats, RecentActivity, HealthStatus, SpaceSavedData, CurrentEncoding, TimeRange } from '../types';
 
 interface ChartData extends SpaceSavedData {
-  cumulative_gb: string;
+  cumulative_gb: number;
+  period_gb: number;
+  local_time: string;
 }
+
+const TIME_RANGE_LABELS: Record<TimeRange, string> = {
+  '24h': '24 Hours',
+  '7d': '7 Days',
+  '30d': '30 Days',
+  '90d': '90 Days',
+  '1y': '1 Year',
+  'all': 'All Time',
+};
 
 interface StatCardProps {
   label: string;
@@ -34,35 +45,52 @@ function StatCard({ label, value, icon, color = 'text-white', subtitle, small }:
   );
 }
 
+type ChartMode = 'cumulative' | 'period';
+
 export default function Dashboard(): React.ReactElement {
-  const [stats, setStats] = useState<Stats | null>(null);
   const [chartData, setChartData] = useState<ChartData[]>([]);
-  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
-  const [health, setHealth] = useState<HealthStatus | null>(null);
+  const [chartMode, setChartMode] = useState<ChartMode>('period');
+  const [timeRange, setTimeRange] = useState<TimeRange>('7d');
 
   const { data: currentEncoding } = usePolling<CurrentEncoding>(getCurrentEncoding, 2000);
+  const { data: stats } = usePolling<Stats>(getStats, 5000);
+  const { data: recentActivity } = usePolling<RecentActivity[]>(() => getRecentActivity(10), 5000);
+  const { data: health } = usePolling<HealthStatus>(getHealth, 5000);
 
+  // Poll chart data every 30 seconds (less frequent since it's historical)
   useEffect(() => {
-    loadData();
-  }, []);
+    loadChartData();
+    const interval = setInterval(loadChartData, 30000);
+    return () => clearInterval(interval);
+  }, [timeRange]);
 
-  async function loadData(): Promise<void> {
+  function formatLocalTime(utcString: string, granularity: 'hourly' | 'daily'): string {
+    const date = new Date(utcString);
+    if (granularity === 'hourly') {
+      return date.toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+      });
+    } else {
+      return date.toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+      });
+    }
+  }
+
+  async function loadChartData(): Promise<void> {
     try {
-      const [statsData, spaceData, activityData, healthData] = await Promise.all([
-        getStats(),
-        getSpaceSaved(30),
-        getRecentActivity(10),
-        getHealth(),
-      ]);
-      setStats(statsData);
+      const spaceData = await getSpaceSaved(timeRange);
       setChartData(spaceData.map(d => ({
         ...d,
-        cumulative_gb: (d.cumulative_saved / 1024 / 1024 / 1024).toFixed(2),
+        cumulative_gb: d.cumulative_saved / 1024 / 1024 / 1024,
+        period_gb: d.period_saved / 1024 / 1024 / 1024,
+        local_time: formatLocalTime(d.timestamp, d.granularity),
       })));
-      setRecentActivity(activityData);
-      setHealth(healthData);
     } catch (err) {
-      console.error('Failed to load dashboard data:', err);
+      console.error('Failed to load chart data:', err);
     }
   }
 
@@ -92,7 +120,23 @@ export default function Dashboard(): React.ReactElement {
       {/* Current Encoding */}
       {currentEncoding?.encoding && currentEncoding.file && (
         <div className="card border-l-4 border-yellow-500">
-          <h2 className="text-lg font-semibold mb-2">Currently Encoding</h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-semibold">Currently Encoding</h2>
+            <button
+              onClick={async () => {
+                if (confirm('Cancel the current encoding? The file will be marked as cancelled.')) {
+                  try {
+                    await cancelEncoding();
+                  } catch (err) {
+                    console.error('Failed to cancel:', err);
+                  }
+                }
+              }}
+              className="btn btn-danger text-sm py-1 px-3"
+            >
+              Cancel
+            </button>
+          </div>
           <p className="text-slate-300 truncate">{currentEncoding.file.file_name}</p>
           <div className="mt-2">
             <div className="flex justify-between text-sm text-slate-400 mb-1">
@@ -172,20 +216,77 @@ export default function Dashboard(): React.ReactElement {
 
       {/* Space Saved Chart */}
       <div className="card">
-        <h2 className="text-lg font-semibold mb-4">Space Saved Over Time</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <h2 className="text-lg font-semibold">Space Saved Over Time</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value as TimeRange)}
+              className="input py-1 px-2 text-sm"
+            >
+              {(Object.keys(TIME_RANGE_LABELS) as TimeRange[]).map((range) => (
+                <option key={range} value={range}>
+                  {TIME_RANGE_LABELS[range]}
+                </option>
+              ))}
+            </select>
+            <div className="flex gap-1 bg-slate-700 rounded-lg p-1">
+              <button
+                onClick={() => setChartMode('cumulative')}
+                className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                  chartMode === 'cumulative'
+                    ? 'bg-slate-600 text-white'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Cumulative
+              </button>
+              <button
+                onClick={() => setChartMode('period')}
+                className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                  chartMode === 'period'
+                    ? 'bg-slate-600 text-white'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                {chartData[0]?.granularity === 'hourly' ? 'Per Hour' : 'Per Day'}
+              </button>
+            </div>
+          </div>
+        </div>
         {chartData.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-              <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} />
-              <YAxis stroke="#94a3b8" fontSize={12} unit=" GB" />
+              <XAxis
+                dataKey="local_time"
+                stroke="#94a3b8"
+                fontSize={11}
+                interval="preserveStartEnd"
+                tickFormatter={(value: string) => value}
+              />
+              <YAxis
+                stroke="#94a3b8"
+                fontSize={12}
+                unit=" GB"
+                domain={[0, 'auto']}
+                tickFormatter={(value: number) => value.toFixed(chartMode === 'period' ? 1 : 0)}
+              />
               <Tooltip
                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }}
-                formatter={(value: string) => [`${value} GB`, 'Cumulative Saved']}
+                formatter={(value: number) => [
+                  `${value.toFixed(2)} GB`,
+                  chartMode === 'cumulative'
+                    ? 'Cumulative Saved'
+                    : chartData[0]?.granularity === 'hourly'
+                      ? 'Saved This Hour'
+                      : 'Saved This Day'
+                ]}
+                labelFormatter={(label: string) => label}
               />
               <Line
-                type="monotone"
-                dataKey="cumulative_gb"
+                type="linear"
+                dataKey={chartMode === 'cumulative' ? 'cumulative_gb' : 'period_gb'}
                 stroke="#22c55e"
                 strokeWidth={2}
                 dot={false}
@@ -200,7 +301,7 @@ export default function Dashboard(): React.ReactElement {
       {/* Recent Activity */}
       <div className="card">
         <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-        {recentActivity.length > 0 ? (
+        {recentActivity && recentActivity.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="table">
               <thead>

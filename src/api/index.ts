@@ -59,7 +59,8 @@ export function createApp(): Express {
 
 export function startServer(app: Express): Promise<http.Server> {
   return new Promise((resolve) => {
-    const server = app.listen(config.port, () => {
+    const server = http.createServer(app);
+    server.listen(config.port, () => {
       logger.info(`Server listening on port ${config.port}`);
       resolve(server);
     });

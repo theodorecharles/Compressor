@@ -1,5 +1,5 @@
-import { spawn } from 'child_process';
-import { unlink, stat, copyFile, chown } from 'fs/promises';
+import { spawn, ChildProcess } from 'child_process';
+import { unlink, stat, copyFile, chown, rename } from 'fs/promises';
 import { dirname, basename, join } from 'path';
 import { tmpdir } from 'os';
 import config from '../config.js';
@@ -15,8 +15,25 @@ const FILE_GID = 100;
 // Event emitter for progress updates
 let progressCallback: ProgressCallback | null = null;
 
+// Current ffmpeg process for cancellation
+let currentFfmpegProcess: ChildProcess | null = null;
+let isCancelled = false;
+
 export function setProgressCallback(callback: ProgressCallback | null): void {
   progressCallback = callback;
+}
+
+/**
+ * Cancel the current encoding
+ */
+export function cancelCurrentEncoding(): boolean {
+  if (currentFfmpegProcess) {
+    logger.info('Cancelling current encoding...');
+    isCancelled = true;
+    currentFfmpegProcess.kill('SIGTERM');
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -27,36 +44,74 @@ export async function encodeFile(file: File): Promise<EncodeResult> {
   const inputPath = file.file_path;
   const outputDir = dirname(inputPath);
   const inputBasename = basename(inputPath, '.' + inputPath.split('.').pop());
-  // Write temp file to /tmp for better performance (often RAM-backed)
-  const tempOutputPath = join(tmpdir(), `compressor-${file.id}-${Date.now()}.mkv`);
+  const inputExt = inputPath.split('.').pop();
+  // Copy input and write output to /tmp to reduce I/O on source drive
+  const tempInputPath = join(tmpdir(), `compressor-${file.id}-${Date.now()}-input.${inputExt}`);
+  const tempOutputPath = join(tmpdir(), `compressor-${file.id}-${Date.now()}-output.mkv`);
   const finalOutputPath = join(outputDir, `${inputBasename}.mkv`);
 
   logger.info(`Starting encode: ${inputPath}`);
   createEncodingLog(file.id, 'started', { inputPath });
 
   try {
-    // Get fresh metadata
-    const metadata = await probeFile(inputPath);
+    // Copy original file to /tmp for encoding
+    logger.info(`Copying input to temp: ${tempInputPath}`);
+    await copyFile(inputPath, tempInputPath);
 
-    // Build ffmpeg command
-    const ffmpegArgs = buildFfmpegArgs(inputPath, tempOutputPath, metadata);
+    // Get fresh metadata from temp copy
+    const metadata = await probeFile(tempInputPath);
+
+    // Build ffmpeg command (read from temp input)
+    const ffmpegArgs = buildFfmpegArgs(tempInputPath, tempOutputPath, metadata);
 
     logger.info(`FFmpeg args: ${ffmpegArgs.join(' ')}`);
     createEncodingLog(file.id, 'ffmpeg_command', { args: ffmpegArgs });
 
     // Try hardware decode + encode first
-    let success = await runFfmpeg(ffmpegArgs, file.id, metadata.duration);
+    let result = await runFfmpeg(ffmpegArgs, file.id, metadata.duration);
+
+    // If cancelled, handle it
+    if (result === 'cancelled') {
+      logger.info(`Encoding cancelled for ${inputPath}`);
+      await unlink(tempInputPath).catch(() => {});
+      await unlink(tempOutputPath).catch(() => {});
+
+      updateFile(file.id, {
+        status: 'cancelled',
+        completed_at: new Date().toISOString(),
+      });
+
+      createEncodingLog(file.id, 'cancelled', { reason: 'User cancelled' });
+
+      return { success: false, status: 'cancelled' };
+    }
 
     // If hardware decode failed, try CPU decode
-    if (!success) {
+    if (result === 'failed') {
       logger.warn(`Hardware decode failed for ${inputPath}, trying CPU decode`);
       createEncodingLog(file.id, 'fallback_cpu_decode');
 
-      const cpuArgs = buildFfmpegArgs(inputPath, tempOutputPath, metadata, false);
-      success = await runFfmpeg(cpuArgs, file.id, metadata.duration);
+      const cpuArgs = buildFfmpegArgs(tempInputPath, tempOutputPath, metadata, false);
+      result = await runFfmpeg(cpuArgs, file.id, metadata.duration);
+
+      // Check for cancellation again
+      if (result === 'cancelled') {
+        logger.info(`Encoding cancelled for ${inputPath}`);
+        await unlink(tempInputPath).catch(() => {});
+        await unlink(tempOutputPath).catch(() => {});
+
+        updateFile(file.id, {
+          status: 'cancelled',
+          completed_at: new Date().toISOString(),
+        });
+
+        createEncodingLog(file.id, 'cancelled', { reason: 'User cancelled' });
+
+        return { success: false, status: 'cancelled' };
+      }
     }
 
-    if (!success) {
+    if (result === 'failed') {
       throw new Error('FFmpeg encoding failed');
     }
 
@@ -72,6 +127,7 @@ export async function encodeFile(file: File): Promise<EncodeResult> {
       // Output is larger or same - reject
       logger.info(`Output larger than original, rejecting: ${inputPath}`);
       await unlink(tempOutputPath);
+      await unlink(tempInputPath);
 
       updateFile(file.id, {
         status: 'rejected',
@@ -90,20 +146,26 @@ export async function encodeFile(file: File): Promise<EncodeResult> {
       return { success: true, status: 'rejected', outputSize };
     }
 
-    // Output is smaller - replace original
+    // Output is smaller - replace original using safe temp file approach
     logger.info(`Output smaller, replacing original: ${inputPath}`);
 
-    // Delete original
+    const tempFinalPath = `${finalOutputPath}.temp.mkv`;
+
+    // Step 1: Copy from temp to final location with .temp.mkv extension
+    await copyFile(tempOutputPath, tempFinalPath);
+
+    // Set ownership to nobody:users on temp file
+    await chown(tempFinalPath, FILE_UID, FILE_GID);
+
+    // Step 2: Delete original file (safe now that we have the temp copy)
     await unlink(inputPath);
 
-    // Copy from temp to final location (can't rename across filesystems)
-    await copyFile(tempOutputPath, finalOutputPath);
+    // Step 3: Rename .temp.mkv to final name (atomic operation)
+    await rename(tempFinalPath, finalOutputPath);
 
-    // Set ownership to nobody:users
-    await chown(finalOutputPath, FILE_UID, FILE_GID);
-
-    // Delete temp file
+    // Clean up temp files
     await unlink(tempOutputPath);
+    await unlink(tempInputPath);
 
     const spaceSaved = originalSize - outputSize;
 
@@ -132,9 +194,19 @@ export async function encodeFile(file: File): Promise<EncodeResult> {
     const errorMessage = (error as Error).message;
     logger.error(`Encode failed: ${inputPath} - ${errorMessage}`);
 
-    // Clean up temp file if it exists
+    // Clean up temp files if they exist
     try {
       await unlink(tempOutputPath);
+    } catch {
+      // Ignore - file might not exist
+    }
+    try {
+      await unlink(tempInputPath);
+    } catch {
+      // Ignore - file might not exist
+    }
+    try {
+      await unlink(`${finalOutputPath}.temp.mkv`);
     } catch {
       // Ignore - file might not exist
     }
@@ -202,10 +274,22 @@ function buildFfmpegArgs(inputPath: string, outputPath: string, metadata: VideoM
   // Encoding preset
   args.push('-preset', config.nvencPreset);
 
-  // Bitrate - use half of original, or CRF fallback
+  // Bitrate - use half of original, with resolution-based caps
   if (metadata.bitrate) {
     // Target bitrate is HALF of original (HEVC is ~50% more efficient)
-    const targetBitrate = Math.floor(metadata.bitrate / 2);
+    let targetBitrate = Math.floor(metadata.bitrate / 2);
+
+    // Apply resolution-based bitrate caps (4K is scaled to 1080p, so use 1080p cap)
+    const BITRATE_CAP_1080P = 6_000_000;  // 6 Mbps for 1080p (and 4K scaled down)
+    const BITRATE_CAP_720P = 3_000_000;   // 3 Mbps for 720p and below
+
+    const height = metadata.height || 1080;
+    // 4K gets scaled to 1080p, so treat it as 1080p for bitrate purposes
+    const cap = (!metadata.is4k && height <= 720) ? BITRATE_CAP_720P : BITRATE_CAP_1080P;
+    if (targetBitrate > cap) {
+      targetBitrate = cap;
+    }
+
     args.push('-b:v', targetBitrate.toString());
   } else {
     // CRF fallback when bitrate is unknown
@@ -234,10 +318,12 @@ function buildFfmpegArgs(inputPath: string, outputPath: string, metadata: VideoM
 
 /**
  * Run FFmpeg with progress tracking
+ * Returns: 'success' | 'failed' | 'cancelled'
  */
-function runFfmpeg(args: string[], fileId: number, duration: number | null): Promise<boolean> {
+function runFfmpeg(args: string[], fileId: number, duration: number | null): Promise<'success' | 'failed' | 'cancelled'> {
   return new Promise((resolve) => {
     const proc = spawn(config.ffmpegPath, args);
+    currentFfmpegProcess = proc;
     let stderr = '';
 
     proc.stderr.on('data', (data: Buffer) => {
@@ -256,18 +342,28 @@ function runFfmpeg(args: string[], fileId: number, duration: number | null): Pro
       }
     });
 
-    proc.on('close', (code) => {
+    proc.on('close', (code, signal) => {
+      currentFfmpegProcess = null;
+
+      // Check if cancelled
+      if (isCancelled || signal === 'SIGTERM') {
+        isCancelled = false;
+        resolve('cancelled');
+        return;
+      }
+
       if (code === 0) {
-        resolve(true);
+        resolve('success');
       } else {
         logger.error(`FFmpeg failed with code ${code}: ${stderr.slice(-500)}`);
-        resolve(false);
+        resolve('failed');
       }
     });
 
     proc.on('error', (err) => {
+      currentFfmpegProcess = null;
       logger.error(`FFmpeg spawn error: ${err.message}`);
-      resolve(false);
+      resolve('failed');
     });
   });
 }
@@ -387,4 +483,4 @@ export async function testEncodeFile(filePath: string, testOutputDir: string): P
   }
 }
 
-export default { encodeFile, testEncodeFile, checkFfmpegNvenc, setProgressCallback };
+export default { encodeFile, testEncodeFile, checkFfmpegNvenc, setProgressCallback, cancelCurrentEncoding };

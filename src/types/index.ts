@@ -1,7 +1,17 @@
 // Database Models
 
-export type FileStatus = 'queued' | 'encoding' | 'finished' | 'skipped' | 'excluded' | 'errored' | 'rejected';
+export type FileStatus = 'queued' | 'encoding' | 'finished' | 'skipped' | 'excluded' | 'errored' | 'rejected' | 'cancelled';
 export type ExclusionType = 'folder' | 'pattern';
+
+// Queue sorting options
+export type QueueSortOrder = 'bitrate_desc' | 'bitrate_asc' | 'alphabetical' | 'random';
+export type LibraryPriority = 'alphabetical_asc' | 'alphabetical_desc' | 'round_robin';
+
+export interface QueueSettings {
+  sort_order: QueueSortOrder;
+  library_priority: LibraryPriority;
+  last_library_id: number | null; // For round-robin tracking
+}
 
 export interface Library {
   id: number;
@@ -54,6 +64,17 @@ export interface File {
 export interface Stats {
   id: number;
   date: string;
+  total_files_processed: number;
+  total_space_saved: number;
+  files_finished: number;
+  files_skipped: number;
+  files_rejected: number;
+  files_errored: number;
+}
+
+export interface HourlyStats {
+  id: number;
+  hour_utc: string;
   total_files_processed: number;
   total_space_saved: number;
   files_finished: number;
@@ -189,7 +210,7 @@ export interface ScanResult {
 
 export interface EncodeResult {
   success: boolean;
-  status?: 'finished' | 'rejected';
+  status?: 'finished' | 'rejected' | 'cancelled';
   outputSize?: number;
   spaceSaved?: number;
   error?: string;

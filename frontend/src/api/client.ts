@@ -12,6 +12,9 @@ import type {
   TestStatus,
   FilesResponse,
   PathExclusionResult,
+  QueueSettings,
+  QueueSortOrder,
+  LibraryPriority,
 } from '../types';
 
 const API_BASE = '/api';
@@ -56,6 +59,7 @@ export const updateLibrary = (id: number, data: Partial<Library>): Promise<Libra
 export const deleteLibrary = (id: number): Promise<null> => request(`/libraries/${id}`, { method: 'DELETE' });
 export const scanLibrary = (id: number): Promise<{ message: string; library_id: number }> => request(`/libraries/${id}/scan`, { method: 'POST' });
 export const getScanStatus = (): Promise<ScanStatus> => request('/libraries/scan/status');
+export const stopScan = (): Promise<{ message: string }> => request('/libraries/scan/stop', { method: 'POST' });
 
 // Exclusions
 export const getExclusions = (libraryId: number | null = null): Promise<Exclusion[]> => {
@@ -96,11 +100,14 @@ export const getQueue = (params: Record<string, string | number | undefined> = {
 export const getCurrentEncoding = (): Promise<CurrentEncoding> => request('/queue/current');
 export const pauseQueue = (): Promise<{ message: string }> => request('/queue/pause', { method: 'POST' });
 export const resumeQueue = (): Promise<{ message: string }> => request('/queue/resume', { method: 'POST' });
+export const cancelEncoding = (): Promise<{ message: string }> => request('/queue/cancel', { method: 'POST' });
+export const getQueueSettings = (): Promise<QueueSettings> => request('/queue/settings');
+export const updateQueueSettings = (data: { sort_order?: QueueSortOrder; library_priority?: LibraryPriority }): Promise<QueueSettings> => request('/queue/settings', { method: 'PUT', body: data });
 
 // Stats
 export const getStats = (): Promise<Stats> => request('/stats');
 export const getStatsHistory = (days: number = 30): Promise<Stats[]> => request(`/stats/history?days=${days}`);
-export const getSpaceSaved = (days: number = 30): Promise<SpaceSavedData[]> => request(`/stats/space-saved?days=${days}`);
+export const getSpaceSaved = (range: string = '7d'): Promise<SpaceSavedData[]> => request(`/stats/space-saved?range=${range}`);
 export const getRecentActivity = (limit: number = 20): Promise<RecentActivity[]> => request(`/stats/recent?limit=${limit}`);
 
 // System
@@ -134,6 +141,8 @@ export default {
   getCurrentEncoding,
   pauseQueue,
   resumeQueue,
+  getQueueSettings,
+  updateQueueSettings,
   getStats,
   getStatsHistory,
   getSpaceSaved,
