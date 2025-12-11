@@ -7,7 +7,7 @@ import { isExcluded } from './exclusions.js';
 import {
   getEnabledLibraries,
   getFileByPath,
-  upsertFile,
+  createFile,
   updateTodayStats,
 } from '../db/queries.js';
 
@@ -177,15 +177,10 @@ async function findVideoFiles(dir, files = []) {
  * Process a single file - add to database if not exists
  */
 async function processFile(filePath, libraryId) {
-  // Check if file already in database
+  // Check if file already in database - skip if it exists
   const existingFile = getFileByPath(filePath);
   if (existingFile) {
-    // Don't re-process files that are already done or have errors
-    // Only allow re-scanning of skipped/excluded files in case exclusions changed
-    const terminalStatuses = ['finished', 'errored', 'rejected', 'encoding', 'queued'];
-    if (terminalStatuses.includes(existingFile.status)) {
-      return 'exists';
-    }
+    return 'exists';
   }
 
   // Get file stats
@@ -195,7 +190,7 @@ async function processFile(filePath, libraryId) {
 
   // Check minimum file size
   if (fileSize < config.minFileSizeBytes) {
-    upsertFile({
+    createFile({
       library_id: libraryId,
       file_path: filePath,
       file_name: fileName,
@@ -216,7 +211,7 @@ async function processFile(filePath, libraryId) {
   // Check exclusions
   const exclusionCheck = isExcluded(filePath, libraryId);
   if (exclusionCheck.excluded) {
-    upsertFile({
+    createFile({
       library_id: libraryId,
       file_path: filePath,
       file_name: fileName,
@@ -240,7 +235,7 @@ async function processFile(filePath, libraryId) {
   } catch (error) {
     logger.warn(`Could not probe file ${filePath}: ${error.message}`);
     // Add with error status
-    upsertFile({
+    createFile({
       library_id: libraryId,
       file_path: filePath,
       file_name: fileName,
@@ -261,7 +256,7 @@ async function processFile(filePath, libraryId) {
 
   // Check if already HEVC
   if (metadata.isHevc) {
-    upsertFile({
+    createFile({
       library_id: libraryId,
       file_path: filePath,
       file_name: fileName,
@@ -280,7 +275,7 @@ async function processFile(filePath, libraryId) {
   }
 
   // Add to queue
-  upsertFile({
+  createFile({
     library_id: libraryId,
     file_path: filePath,
     file_name: fileName,
