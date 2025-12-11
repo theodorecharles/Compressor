@@ -93,6 +93,24 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 2,
+    name: 'queue_settings',
+    up: (db) => {
+      db.exec(`
+        -- Settings table for queue sorting options
+        CREATE TABLE IF NOT EXISTS settings (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        );
+
+        -- Insert default queue settings
+        INSERT INTO settings (key, value) VALUES ('queue_sort_order', 'bitrate_desc');
+        INSERT INTO settings (key, value) VALUES ('library_priority', 'alphabetical_asc');
+        INSERT INTO settings (key, value) VALUES ('last_library_id', '');
+      `);
+    },
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {

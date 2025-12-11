@@ -4,6 +4,7 @@ import {
   getNextQueuedFile,
   updateFile,
   resetEncodingFiles,
+  updateLastLibraryId,
 } from '../db/queries.js';
 import type { File, WorkerStatus } from '../types/index.js';
 
@@ -130,6 +131,9 @@ async function workerLoop(): Promise<void> {
         completed_at: new Date().toISOString(),
       });
     }
+
+    // Update last library ID for round-robin tracking
+    updateLastLibraryId(file.library_id);
 
     currentFile = null;
     currentProgress = 0;

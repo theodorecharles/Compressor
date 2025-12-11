@@ -12,6 +12,9 @@ import type {
   StatsUpdates,
   CreateFileData,
   OverallStats,
+  QueueSettings,
+  QueueSortOrder,
+  LibraryPriority,
 } from '../types/index.js';
 
 // ============ Libraries ============
@@ -288,24 +291,135 @@ export function deleteFile(id: number): boolean {
 
 export function getNextQueuedFile(): File | undefined {
   const db = getDb();
+  const settings = getQueueSettings();
+
+  // Build ORDER BY clause based on settings
+  let orderBy = '';
+
+  // Library priority ordering
+  if (settings.library_priority === 'round_robin') {
+    // For round-robin, we need special handling
+    const lastLibraryId = settings.last_library_id;
+
+    // Get all library IDs with queued files, ordered by name
+    const librariesWithQueue = db.prepare(`
+      SELECT DISTINCT l.id, l.name
+      FROM files f
+      JOIN libraries l ON f.library_id = l.id
+      WHERE f.status = 'queued'
+      ORDER BY l.name ASC
+    `).all() as { id: number; name: string }[];
+
+    if (librariesWithQueue.length === 0) {
+      return undefined;
+    }
+
+    // Find the next library in rotation
+    let nextLibraryId: number;
+    if (lastLibraryId === null) {
+      nextLibraryId = librariesWithQueue[0].id;
+    } else {
+      const lastIndex = librariesWithQueue.findIndex(lib => lib.id === lastLibraryId);
+      const nextIndex = (lastIndex + 1) % librariesWithQueue.length;
+      nextLibraryId = librariesWithQueue[nextIndex].id;
+    }
+
+    // Build file sort order
+    let fileSortOrder: string;
+    switch (settings.sort_order) {
+      case 'bitrate_desc':
+        fileSortOrder = 'f.original_bitrate DESC NULLS LAST';
+        break;
+      case 'bitrate_asc':
+        fileSortOrder = 'f.original_bitrate ASC NULLS LAST';
+        break;
+      case 'alphabetical':
+        fileSortOrder = 'f.file_name ASC';
+        break;
+      case 'random':
+        fileSortOrder = 'RANDOM()';
+        break;
+      default:
+        fileSortOrder = 'f.original_bitrate DESC NULLS LAST';
+    }
+
+    return db.prepare(`
+      SELECT f.*, l.path as library_path
+      FROM files f
+      JOIN libraries l ON f.library_id = l.id
+      WHERE f.status = 'queued' AND f.library_id = ?
+      ORDER BY ${fileSortOrder}
+      LIMIT 1
+    `).get(nextLibraryId) as File | undefined;
+  }
+
+  // Non-round-robin: build combined ORDER BY
+  const libraryOrder = settings.library_priority === 'alphabetical_desc' ? 'l.name DESC' : 'l.name ASC';
+
+  let fileSortOrder: string;
+  switch (settings.sort_order) {
+    case 'bitrate_desc':
+      fileSortOrder = 'f.original_bitrate DESC NULLS LAST';
+      break;
+    case 'bitrate_asc':
+      fileSortOrder = 'f.original_bitrate ASC NULLS LAST';
+      break;
+    case 'alphabetical':
+      fileSortOrder = 'f.file_name ASC';
+      break;
+    case 'random':
+      fileSortOrder = 'RANDOM()';
+      break;
+    default:
+      fileSortOrder = 'f.original_bitrate DESC NULLS LAST';
+  }
+
+  orderBy = `${libraryOrder}, ${fileSortOrder}`;
+
   return db.prepare(`
     SELECT f.*, l.path as library_path
     FROM files f
     JOIN libraries l ON f.library_id = l.id
     WHERE f.status = 'queued'
-    ORDER BY f.created_at ASC
+    ORDER BY ${orderBy}
     LIMIT 1
   `).get() as File | undefined;
 }
 
 export function getQueuedFiles({ limit = 100, offset = 0 } = {}): File[] {
   const db = getDb();
+  const settings = getQueueSettings();
+
+  // Build ORDER BY clause based on settings (same as getNextQueuedFile for consistency)
+  const libraryOrder = settings.library_priority === 'alphabetical_desc' ? 'l.name DESC' : 'l.name ASC';
+
+  let fileSortOrder: string;
+  switch (settings.sort_order) {
+    case 'bitrate_desc':
+      fileSortOrder = 'f.original_bitrate DESC NULLS LAST';
+      break;
+    case 'bitrate_asc':
+      fileSortOrder = 'f.original_bitrate ASC NULLS LAST';
+      break;
+    case 'alphabetical':
+      fileSortOrder = 'f.file_name ASC';
+      break;
+    case 'random':
+      // For display, use a stable order instead of truly random
+      fileSortOrder = 'f.id ASC';
+      break;
+    default:
+      fileSortOrder = 'f.original_bitrate DESC NULLS LAST';
+  }
+
+  const orderBy = `${libraryOrder}, ${fileSortOrder}`;
+
   return db.prepare(`
     SELECT f.*, l.name as library_name
     FROM files f
     JOIN libraries l ON f.library_id = l.id
     WHERE f.status = 'queued'
-    ORDER BY f.created_at ASC
+    ORDER BY ${orderBy}
     LIMIT ? OFFSET ?
   `).all(limit, offset) as File[];
 }
@@ -489,6 +603,44 @@ export function getRecentActivity(limit: number = 20): RecentActivityItem[] {
   `).all(limit) as RecentActivityItem[];
 }
 
+// ============ Settings ============
+
+export function getSetting(key: string): string | null {
+  const db = getDb();
+  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key) as { value: string } | undefined;
+  return row?.value ?? null;
+}
+
+export function setSetting(key: string, value: string): void {
+  const db = getDb();
+  db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, value);
+}
+
+export function getQueueSettings(): QueueSettings {
+  return {
+    sort_order: (getSetting('queue_sort_order') || 'bitrate_desc') as QueueSortOrder,
+    library_priority: (getSetting('library_priority') || 'alphabetical_asc') as LibraryPriority,
+    last_library_id: getSetting('last_library_id') ? parseInt(getSetting('last_library_id')!, 10) : null,
+  };
+}
+
+export function updateQueueSettings(settings: Partial<QueueSettings>): QueueSettings {
+  if (settings.sort_order !== undefined) {
+    setSetting('queue_sort_order', settings.sort_order);
+  }
+  if (settings.library_priority !== undefined) {
+    setSetting('library_priority', settings.library_priority);
+  }
+  if (settings.last_library_id !== undefined) {
+    setSetting('last_library_id', settings.last_library_id?.toString() || '');
+  }
+  return getQueueSettings();
+}
+
+export function updateLastLibraryId(libraryId: number | null): void {
+  setSetting('last_library_id', libraryId?.toString() || '');
+}
+
 export default {
   // Libraries
   getAllLibraries,
@@ -530,4 +682,10 @@ export default {
   createEncodingLog,
   getEncodingLogs,
   getRecentActivity,
+  // Settings
+  getSetting,
+  setSetting,
+  getQueueSettings,
+  updateQueueSettings,
+  updateLastLibraryId,
 };

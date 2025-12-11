@@ -3,6 +3,16 @@
 export type FileStatus = 'queued' | 'encoding' | 'finished' | 'skipped' | 'excluded' | 'errored' | 'rejected';
 export type ExclusionType = 'folder' | 'pattern';
 
+// Queue sorting options
+export type QueueSortOrder = 'bitrate_desc' | 'bitrate_asc' | 'alphabetical' | 'random';
+export type LibraryPriority = 'alphabetical_asc' | 'alphabetical_desc' | 'round_robin';
+
+export interface QueueSettings {
+  sort_order: QueueSortOrder;
+  library_priority: LibraryPriority;
+  last_library_id: number | null; // For round-robin tracking
+}
+
 export interface Library {
   id: number;
   name: string;
