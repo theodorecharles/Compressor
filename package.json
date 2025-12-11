@@ -2,11 +2,13 @@
   "name": "compressor",
   "version": "1.0.0",
   "description": "HEVC media transcoder with NVIDIA GPU acceleration",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc && node --watch dist/index.js",
+    "dev:watch": "tsc -w"
   },
   "keywords": [
     "hevc",
@@ -25,5 +27,11 @@
     "minimatch": "^10.0.1",
     "winston": "^3.17.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.0.0",
+    "typescript": "^5.9.3"
+  }
 }
