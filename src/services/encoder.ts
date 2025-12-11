@@ -220,16 +220,15 @@ function buildFfmpegArgs(inputPath: string, outputPath: string, metadata: VideoM
     // Target bitrate is HALF of original (HEVC is ~50% more efficient)
     let targetBitrate = Math.floor(metadata.bitrate / 2);
 
-    // Apply resolution-based bitrate caps
-    const BITRATE_CAP_1080P = 6_000_000;  // 6 Mbps for 1080p
+    // Apply resolution-based bitrate caps (4K is scaled to 1080p, so use 1080p cap)
+    const BITRATE_CAP_1080P = 6_000_000;  // 6 Mbps for 1080p (and 4K scaled down)
     const BITRATE_CAP_720P = 3_000_000;   // 3 Mbps for 720p and below
 
-    if (!metadata.is4k) {
-      const height = metadata.height || 1080;
-      const cap = height <= 720 ? BITRATE_CAP_720P : BITRATE_CAP_1080P;
-      if (targetBitrate > cap) {
-        targetBitrate = cap;
-      }
+    const height = metadata.height || 1080;
+    // 4K gets scaled to 1080p, so treat it as 1080p for bitrate purposes
+    const cap = (!metadata.is4k && height <= 720) ? BITRATE_CAP_720P : BITRATE_CAP_1080P;
+    if (targetBitrate > cap) {
+      targetBitrate = cap;
     }
 
     args.push('-b:v', targetBitrate.toString());
