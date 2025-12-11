@@ -27,19 +27,25 @@ export async function encodeFile(file: File): Promise<EncodeResult> {
   const inputPath = file.file_path;
   const outputDir = dirname(inputPath);
   const inputBasename = basename(inputPath, '.' + inputPath.split('.').pop());
-  // Write temp file to /tmp for better performance (often RAM-backed)
-  const tempOutputPath = join(tmpdir(), `compressor-${file.id}-${Date.now()}.mkv`);
+  const inputExt = inputPath.split('.').pop();
+  // Copy input and write output to /tmp to reduce I/O on source drive
+  const tempInputPath = join(tmpdir(), `compressor-${file.id}-${Date.now()}-input.${inputExt}`);
+  const tempOutputPath = join(tmpdir(), `compressor-${file.id}-${Date.now()}-output.mkv`);
   const finalOutputPath = join(outputDir, `${inputBasename}.mkv`);
 
   logger.info(`Starting encode: ${inputPath}`);
   createEncodingLog(file.id, 'started', { inputPath });
 
   try {
-    // Get fresh metadata
-    const metadata = await probeFile(inputPath);
+    // Copy original file to /tmp for encoding
+    logger.info(`Copying input to temp: ${tempInputPath}`);
+    await copyFile(inputPath, tempInputPath);
 
-    // Build ffmpeg command
-    const ffmpegArgs = buildFfmpegArgs(inputPath, tempOutputPath, metadata);
+    // Get fresh metadata from temp copy
+    const metadata = await probeFile(tempInputPath);
+
+    // Build ffmpeg command (read from temp input)
+    const ffmpegArgs = buildFfmpegArgs(tempInputPath, tempOutputPath, metadata);
 
     logger.info(`FFmpeg args: ${ffmpegArgs.join(' ')}`);
     createEncodingLog(file.id, 'ffmpeg_command', { args: ffmpegArgs });
@@ -52,7 +58,7 @@ export async function encodeFile(file: File): Promise<EncodeResult> {
       logger.warn(`Hardware decode failed for ${inputPath}, trying CPU decode`);
       createEncodingLog(file.id, 'fallback_cpu_decode');
 
-      const cpuArgs = buildFfmpegArgs(inputPath, tempOutputPath, metadata, false);
+      const cpuArgs = buildFfmpegArgs(tempInputPath, tempOutputPath, metadata, false);
       success = await runFfmpeg(cpuArgs, file.id, metadata.duration);
     }
 
@@ -72,6 +78,7 @@ export async function encodeFile(file: File): Promise<EncodeResult> {
       // Output is larger or same - reject
       logger.info(`Output larger than original, rejecting: ${inputPath}`);
       await unlink(tempOutputPath);
+      await unlink(tempInputPath);
 
       updateFile(file.id, {
         status: 'rejected',
@@ -93,17 +100,18 @@ export async function encodeFile(file: File): Promise<EncodeResult> {
     // Output is smaller - replace original
     logger.info(`Output smaller, replacing original: ${inputPath}`);
 
-    // Delete original
-    await unlink(inputPath);
-
-    // Copy from temp to final location (can't rename across filesystems)
+    // Copy from temp to final location first (before deleting original for safety)
     await copyFile(tempOutputPath, finalOutputPath);
 
     // Set ownership to nobody:users
     await chown(finalOutputPath, FILE_UID, FILE_GID);
 
-    // Delete temp file
+    // Now safe to delete original
+    await unlink(inputPath);
+
+    // Clean up temp files
     await unlink(tempOutputPath);
+    await unlink(tempInputPath);
 
     const spaceSaved = originalSize - outputSize;
 
@@ -132,9 +140,14 @@ export async function encodeFile(file: File): Promise<EncodeResult> {
     const errorMessage = (error as Error).message;
     logger.error(`Encode failed: ${inputPath} - ${errorMessage}`);
 
-    // Clean up temp file if it exists
+    // Clean up temp files if they exist
     try {
       await unlink(tempOutputPath);
+    } catch {
+      // Ignore - file might not exist
+    }
+    try {
+      await unlink(tempInputPath);
     } catch {
       // Ignore - file might not exist
     }
