@@ -11,22 +11,67 @@ import {
   updateTodayStats,
 } from '../db/queries.js';
 
+// Scan status tracking
+const scanStatus = {
+  isScanning: false,
+  currentLibrary: null,
+  currentLibraryId: null,
+  totalFiles: 0,
+  processedFiles: 0,
+  filesAdded: 0,
+  filesSkipped: 0,
+  filesErrored: 0,
+  currentFile: null,
+  lastError: null,
+  startedAt: null,
+};
+
+/**
+ * Get current scan status
+ */
+export function getScanStatus() {
+  return { ...scanStatus };
+}
+
 /**
  * Scan all enabled libraries for video files
  */
 export async function scanAllLibraries() {
+  if (scanStatus.isScanning) {
+    logger.warn('Scan already in progress, skipping');
+    return { totalFilesFound: 0, totalFilesAdded: 0, totalFilesSkipped: 0 };
+  }
+
   const libraries = getEnabledLibraries();
   logger.info(`Starting scan of ${libraries.length} libraries`);
+
+  scanStatus.isScanning = true;
+  scanStatus.startedAt = new Date().toISOString();
 
   let totalFilesFound = 0;
   let totalFilesAdded = 0;
   let totalFilesSkipped = 0;
 
-  for (const library of libraries) {
-    const result = await scanLibrary(library);
-    totalFilesFound += result.filesFound;
-    totalFilesAdded += result.filesAdded;
-    totalFilesSkipped += result.filesSkipped;
+  try {
+    for (const library of libraries) {
+      const result = await scanLibrary(library);
+      totalFilesFound += result.filesFound;
+      totalFilesAdded += result.filesAdded;
+      totalFilesSkipped += result.filesSkipped;
+    }
+  } finally {
+    // Reset scan status when done
+    scanStatus.isScanning = false;
+    scanStatus.currentLibrary = null;
+    scanStatus.currentLibraryId = null;
+    scanStatus.totalFiles = 0;
+    scanStatus.processedFiles = 0;
+    scanStatus.filesAdded = 0;
+    scanStatus.filesSkipped = 0;
+    scanStatus.filesErrored = 0;
+    scanStatus.currentFile = null;
+    scanStatus.lastError = null;
+    scanStatus.startedAt = null;
   }
 
   logger.info(`Scan complete: ${totalFilesFound} files found, ${totalFilesAdded} added, ${totalFilesSkipped} skipped`);
@@ -40,6 +85,16 @@ export async function scanAllLibraries() {
 export async function scanLibrary(library) {
   logger.info(`Scanning library: ${library.name} (${library.path})`);
 
+  // Update scan status
+  scanStatus.currentLibrary = library.name;
+  scanStatus.currentLibraryId = library.id;
+  scanStatus.processedFiles = 0;
+  scanStatus.filesAdded = 0;
+  scanStatus.filesSkipped = 0;
+  scanStatus.filesErrored = 0;
+  scanStatus.currentFile = null;
+  scanStatus.lastError = null;
+
   let filesFound = 0;
   let filesAdded = 0;
   let filesSkipped = 0;
@@ -47,11 +102,17 @@ export async function scanLibrary(library) {
   try {
     const videoFiles = await findVideoFiles(library.path);
     filesFound = videoFiles.length;
+    scanStatus.totalFiles = filesFound;
 
     logger.info(`Found ${filesFound} video files in ${library.name}`);
 
     for (let i = 0; i < videoFiles.length; i++) {
       const filePath = videoFiles[i];
+
+      // Update progress
+      scanStatus.processedFiles = i;
+      scanStatus.currentFile = filePath;
+
       // Log progress every 1000 files
       if (i > 0 && i % 1000 === 0) {
         logger.info(`Scan progress: ${i}/${videoFiles.length} files processed (${filesAdded} added, ${filesSkipped} skipped)`);
@@ -60,13 +121,20 @@ export async function scanLibrary(library) {
         const result = await processFile(filePath, library.id);
         if (result === 'added') {
           filesAdded++;
+          scanStatus.filesAdded = filesAdded;
         } else if (result === 'skipped') {
           filesSkipped++;
+          scanStatus.filesSkipped = filesSkipped;
         }
       } catch (error) {
         logger.error(`Error processing file ${filePath}: ${error.message}`);
+        scanStatus.filesErrored++;
+        scanStatus.lastError = { file: filePath, message: error.message };
       }
     }
+
+    // Mark as fully processed
+    scanStatus.processedFiles = filesFound;
   } catch (error) {
     logger.error(`Error scanning library ${library.name}: ${error.message}`);
   }
@@ -236,4 +304,4 @@ export async function processNewFile(filePath, libraryId) {
   return processFile(filePath, libraryId);
 }
 
-export default { scanAllLibraries, scanLibrary, processNewFile };
+export default { scanAllLibraries, scanLibrary, processNewFile, getScanStatus };

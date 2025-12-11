@@ -34,6 +34,7 @@ export const createLibrary = (data) => request('/libraries', { method: 'POST', b
 export const updateLibrary = (id, data) => request(`/libraries/${id}`, { method: 'PUT', body: data });
 export const deleteLibrary = (id) => request(`/libraries/${id}`, { method: 'DELETE' });
 export const scanLibrary = (id) => request(`/libraries/${id}/scan`, { method: 'POST' });
+export const getScanStatus = () => request('/libraries/scan/status');
 
 // Exclusions
 export const getExclusions = (libraryId = null) => {

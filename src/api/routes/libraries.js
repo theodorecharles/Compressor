@@ -8,7 +8,7 @@ import {
   deleteLibrary,
   getLibraryFileCount,
 } from '../../db/queries.js';
-import { scanLibrary } from '../../services/scanner.js';
+import { scanLibrary, getScanStatus } from '../../services/scanner.js';
 import { restartWatcher } from '../../services/watcher.js';
 
 const router = Router();
@@ -135,6 +135,15 @@ router.post('/:id/scan', async (req, res, next) => {
       return res.status(404).json({ error: 'Library not found' });
     }
 
+    // Check if scan is already in progress
+    const status = getScanStatus();
+    if (status.isScanning) {
+      return res.status(409).json({
+        error: 'Scan already in progress',
+        currentLibrary: status.currentLibrary
+      });
+    }
+
     // Run scan in background
     scanLibrary(library).catch(err => {
       console.error(`Scan error for library ${id}:`, err);
@@ -144,6 +153,12 @@ router.post('/:id/scan', async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+});
+
+// GET /api/libraries/scan/status - Get current scan status
+router.get('/scan/status', (req, res) => {
+  const status = getScanStatus();
+  res.json(status);
 });
 
 export default router;
