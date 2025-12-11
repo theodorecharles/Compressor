@@ -55,6 +55,14 @@ export default function Libraries(): React.ReactElement {
     return () => clearInterval(interval);
   }, [wsConnected]);
 
+  // Refresh library file counts during scanning
+  useEffect(() => {
+    if (!scanStatus?.isScanning) return;
+
+    const interval = setInterval(loadLibraries, 2000);
+    return () => clearInterval(interval);
+  }, [scanStatus?.isScanning]);
+
   async function loadScanStatus(): Promise<void> {
     try {
       const status = await getScanStatus();
