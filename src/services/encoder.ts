@@ -1,5 +1,5 @@
 import { spawn } from 'child_process';
-import { unlink, stat, copyFile, chown } from 'fs/promises';
+import { unlink, stat, copyFile, chown, rename } from 'fs/promises';
 import { dirname, basename, join } from 'path';
 import { tmpdir } from 'os';
 import config from '../config.js';
@@ -97,20 +97,22 @@ export async function encodeFile(file: File): Promise<EncodeResult> {
       return { success: true, status: 'rejected', outputSize };
     }
 
-    // Output is smaller - replace original
+    // Output is smaller - replace original using safe temp file approach
     logger.info(`Output smaller, replacing original: ${inputPath}`);
 
-    // Copy from temp to final location first (before deleting original for safety)
-    await copyFile(tempOutputPath, finalOutputPath);
+    const tempFinalPath = `${finalOutputPath}.temp.mkv`;
 
-    // Set ownership to nobody:users
-    await chown(finalOutputPath, FILE_UID, FILE_GID);
+    // Step 1: Copy from temp to final location with .temp.mkv extension
+    await copyFile(tempOutputPath, tempFinalPath);
 
-    // Delete original only if it's different from the final path
-    // (they're the same when input is already .mkv)
-    if (inputPath !== finalOutputPath) {
-      await unlink(inputPath);
-    }
+    // Set ownership to nobody:users on temp file
+    await chown(tempFinalPath, FILE_UID, FILE_GID);
+
+    // Step 2: Delete original file (safe now that we have the temp copy)
+    await unlink(inputPath);
+
+    // Step 3: Rename .temp.mkv to final name (atomic operation)
+    await rename(tempFinalPath, finalOutputPath);
 
     // Clean up temp files
     await unlink(tempOutputPath);
@@ -151,6 +153,11 @@ export async function encodeFile(file: File): Promise<EncodeResult> {
     }
     try {
       await unlink(tempInputPath);
+    } catch {
+      // Ignore - file might not exist
+    }
+    try {
+      await unlink(`${finalOutputPath}.temp.mkv`);
     } catch {
       // Ignore - file might not exist
     }
