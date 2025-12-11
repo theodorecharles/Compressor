@@ -7,7 +7,7 @@ import { formatBytes, formatPercent } from '../utils/format';
 import type { Stats, RecentActivity, HealthStatus, SpaceSavedData, CurrentEncoding } from '../types';
 
 interface ChartData extends SpaceSavedData {
-  cumulative_gb: string;
+  cumulative_gb: number;
 }
 
 interface StatCardProps {
@@ -57,7 +57,7 @@ export default function Dashboard(): React.ReactElement {
       setStats(statsData);
       setChartData(spaceData.map(d => ({
         ...d,
-        cumulative_gb: (d.cumulative_saved / 1024 / 1024 / 1024).toFixed(2),
+        cumulative_gb: d.cumulative_saved / 1024 / 1024 / 1024,
       })));
       setRecentActivity(activityData);
       setHealth(healthData);
@@ -178,10 +178,16 @@ export default function Dashboard(): React.ReactElement {
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
               <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} />
-              <YAxis stroke="#94a3b8" fontSize={12} unit=" GB" />
+              <YAxis
+                stroke="#94a3b8"
+                fontSize={12}
+                unit=" GB"
+                domain={[0, 'auto']}
+                tickFormatter={(value: number) => value.toFixed(0)}
+              />
               <Tooltip
                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }}
-                formatter={(value: string) => [`${value} GB`, 'Cumulative Saved']}
+                formatter={(value: number) => [`${value.toFixed(2)} GB`, 'Cumulative Saved']}
               />
               <Line
                 type="monotone"
