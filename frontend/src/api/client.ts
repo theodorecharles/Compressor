@@ -15,6 +15,7 @@ import type {
   QueueSettings,
   QueueSortOrder,
   LibraryPriority,
+  EncodingSettings,
 } from '../types';
 
 const API_BASE = '/api';
@@ -115,6 +116,10 @@ export const getHealth = (): Promise<HealthStatus> => request('/system/health');
 export const getGpuStatus = (): Promise<unknown> => request('/system/gpu');
 export const getConfig = (): Promise<unknown> => request('/system/config');
 
+// Settings
+export const getEncodingSettings = (): Promise<EncodingSettings> => request('/settings');
+export const updateEncodingSettings = (data: Partial<EncodingSettings>): Promise<EncodingSettings> => request('/settings', { method: 'PUT', body: data });
+
 // Test
 export const startTestEncode = (data: { file_paths?: string[]; count?: number }): Promise<{ message: string; files: string[]; output_dir: string }> => request('/test/encode', { method: 'POST', body: data });
 export const getTestStatus = (): Promise<TestStatus> => request('/test/status');
@@ -150,6 +155,8 @@ export default {
   getHealth,
   getGpuStatus,
   getConfig,
+  getEncodingSettings,
+  updateEncodingSettings,
   startTestEncode,
   getTestStatus,
   cleanupTestFiles,

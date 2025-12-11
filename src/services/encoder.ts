@@ -5,8 +5,8 @@ import { tmpdir } from 'os';
 import config from '../config.js';
 import logger from '../logger.js';
 import { probeFile } from './ffprobe.js';
-import { updateFile, createEncodingLog, updateTodayStats } from '../db/queries.js';
-import type { File, VideoMetadata, EncodeResult, TestEncodeResult, ProgressCallback } from '../types/index.js';
+import { updateFile, createEncodingLog, updateTodayStats, getEncodingSettings } from '../db/queries.js';
+import type { File, VideoMetadata, EncodeResult, TestEncodeResult, ProgressCallback, EncodingSettings } from '../types/index.js';
 
 // User/group IDs for file ownership (nobody:users on Unraid)
 const FILE_UID = 99;
@@ -228,8 +228,11 @@ export async function encodeFile(file: File): Promise<EncodeResult> {
 /**
  * Build FFmpeg arguments based on file metadata
  */
-function buildFfmpegArgs(inputPath: string, outputPath: string, metadata: VideoMetadata, useHwDecode: boolean = true): string[] {
+function buildFfmpegArgs(inputPath: string, outputPath: string, metadata: VideoMetadata, useHwDecode: boolean = true, encodingSettings?: EncodingSettings): string[] {
   const args: string[] = [];
+
+  // Get settings from database if not provided
+  const settings = encodingSettings || getEncodingSettings();
 
   // Hardware acceleration for decoding (if enabled)
   if (useHwDecode) {
@@ -243,8 +246,8 @@ function buildFfmpegArgs(inputPath: string, outputPath: string, metadata: VideoM
   // Build video filter chain
   const filters: string[] = [];
 
-  // Scale 4K down to 1080p
-  if (metadata.is4k) {
+  // Scale 4K down to 1080p (if enabled in settings)
+  if (metadata.is4k && settings.scale_4k_to_1080p) {
     if (useHwDecode) {
       // Use hardware scaler
       filters.push('scale_cuda=1920:1080:force_original_aspect_ratio=decrease');
@@ -256,7 +259,7 @@ function buildFfmpegArgs(inputPath: string, outputPath: string, metadata: VideoM
   // HDR to SDR tonemapping
   if (metadata.isHdr) {
     // Need to download from GPU for tonemapping, then format convert
-    if (useHwDecode && metadata.is4k) {
+    if (useHwDecode && metadata.is4k && settings.scale_4k_to_1080p) {
       filters.push('hwdownload');
       filters.push('format=nv12');
     }
@@ -274,18 +277,37 @@ function buildFfmpegArgs(inputPath: string, outputPath: string, metadata: VideoM
   // Encoding preset
   args.push('-preset', config.nvencPreset);
 
-  // Bitrate - use half of original, with resolution-based caps
+  // Bitrate - use settings factor of original, with resolution-based caps from settings
   if (metadata.bitrate) {
-    // Target bitrate is HALF of original (HEVC is ~50% more efficient)
-    let targetBitrate = Math.floor(metadata.bitrate / 2);
+    // Target bitrate based on factor from settings
+    let targetBitrate = Math.floor(metadata.bitrate * settings.bitrate_factor);
 
-    // Apply resolution-based bitrate caps (4K is scaled to 1080p, so use 1080p cap)
-    const BITRATE_CAP_1080P = 6_000_000;  // 6 Mbps for 1080p (and 4K scaled down)
-    const BITRATE_CAP_720P = 3_000_000;   // 3 Mbps for 720p and below
+    // Apply resolution-based bitrate caps from settings (convert Mbps to bps)
+    const BITRATE_CAP_1080P = settings.bitrate_cap_1080p * 1_000_000;
+    const BITRATE_CAP_720P = settings.bitrate_cap_720p * 1_000_000;
+    const BITRATE_CAP_OTHER = settings.bitrate_cap_other * 1_000_000;
 
     const height = metadata.height || 1080;
-    // 4K gets scaled to 1080p, so treat it as 1080p for bitrate purposes
-    const cap = (!metadata.is4k && height <= 720) ? BITRATE_CAP_720P : BITRATE_CAP_1080P;
+
+    // Determine the appropriate cap based on resolution
+    let cap: number;
+    if (metadata.is4k && settings.scale_4k_to_1080p) {
+      // 4K scaled to 1080p uses 1080p cap
+      cap = BITRATE_CAP_1080P;
+    } else if (height > 1080) {
+      // Native 4K (not scaled) uses 1080p cap as well
+      cap = BITRATE_CAP_1080P;
+    } else if (height > 720) {
+      // Between 720p and 1080p (e.g., 1080p, 900p)
+      cap = BITRATE_CAP_1080P;
+    } else if (height <= 720) {
+      // 720p and below
+      cap = BITRATE_CAP_720P;
+    } else {
+      // Other resolutions
+      cap = BITRATE_CAP_OTHER;
+    }
+
     if (targetBitrate > cap) {
       targetBitrate = cap;
     }

@@ -156,6 +156,21 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 5,
+    name: 'encoding_settings',
+    up: (db) => {
+      // Add encoding quality settings
+      db.exec(`
+        INSERT OR IGNORE INTO settings (key, value) VALUES ('scale_4k_to_1080p', '1');
+        INSERT OR IGNORE INTO settings (key, value) VALUES ('bitrate_factor', '0.5');
+        INSERT OR IGNORE INTO settings (key, value) VALUES ('bitrate_cap_1080p', '6');
+        INSERT OR IGNORE INTO settings (key, value) VALUES ('bitrate_cap_720p', '3');
+        INSERT OR IGNORE INTO settings (key, value) VALUES ('bitrate_cap_other', '3');
+        INSERT OR IGNORE INTO settings (key, value) VALUES ('min_file_size_mb', '500');
+      `);
+    },
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {
