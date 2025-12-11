@@ -8,6 +8,7 @@ import Exclusions from './pages/Exclusions';
 import Files from './pages/Files';
 import Queue from './pages/Queue';
 import TestEncode from './pages/TestEncode';
+import Settings from './pages/Settings';
 
 interface NavItemProps {
   to: string;
@@ -47,6 +48,7 @@ function App(): React.ReactElement {
     { to: '/exclusions', label: 'Exclusions', icon: '🚫' },
     { to: '/files', label: 'Files', icon: '🎬' },
     { to: '/queue', label: 'Queue', icon: '📋' },
+    { to: '/settings', label: 'Settings', icon: '⚙️' },
     { to: '/test', label: 'Test Encode', icon: '🧪' },
   ];
 
@@ -130,6 +132,7 @@ function App(): React.ReactElement {
           <Route path="/exclusions" element={<Exclusions />} />
           <Route path="/files" element={<Files />} />
           <Route path="/queue" element={<Queue />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/test" element={<TestEncode />} />
         </Routes>
       </main>

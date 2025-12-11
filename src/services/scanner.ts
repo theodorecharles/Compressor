@@ -9,6 +9,7 @@ import {
   getFileByPath,
   createFile,
   updateTodayStats,
+  getEncodingSettings,
 } from '../db/queries.js';
 import { broadcastScanProgress, broadcastScanComplete } from './websocket.js';
 import type { Library, ScanStatus, ScanResult } from '../types/index.js';
@@ -247,8 +248,11 @@ async function processFile(filePath: string, libraryId: number): Promise<'added'
   const fileSize = fileStats.size;
   const fileName = basename(filePath);
 
-  // Check minimum file size
-  if (fileSize < config.minFileSizeBytes) {
+  // Check minimum file size using database settings
+  const settings = getEncodingSettings();
+  const minFileSizeBytes = settings.min_file_size_mb * 1024 * 1024;
+
+  if (fileSize < minFileSizeBytes) {
     createFile({
       library_id: libraryId,
       file_path: filePath,
@@ -260,7 +264,7 @@ async function processFile(filePath: string, libraryId: number): Promise<'added'
       original_height: null,
       is_hdr: false,
       status: 'skipped',
-      skip_reason: `File under ${config.minFileSizeBytes / 1024 / 1024}MB minimum`,
+      skip_reason: `File under ${settings.min_file_size_mb}MB minimum`,
     });
 
     updateTodayStats({ files_skipped: 1 });

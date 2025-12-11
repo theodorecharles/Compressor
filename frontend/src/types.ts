@@ -207,3 +207,12 @@ export interface QueueSettings {
   available_sort_orders: QueueSortOrder[];
   available_library_priorities: LibraryPriority[];
 }
+
+export interface EncodingSettings {
+  scale_4k_to_1080p: boolean;
+  bitrate_factor: number;
+  bitrate_cap_1080p: number;
+  bitrate_cap_720p: number;
+  bitrate_cap_other: number;
+  min_file_size_mb: number;
+}

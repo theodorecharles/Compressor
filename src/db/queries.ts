@@ -16,6 +16,7 @@ import type {
   QueueSettings,
   QueueSortOrder,
   LibraryPriority,
+  EncodingSettings,
 } from '../types/index.js';
 
 // ============ Libraries ============
@@ -711,6 +712,41 @@ export function updateLastLibraryId(libraryId: number | null): void {
   setSetting('last_library_id', libraryId?.toString() || '');
 }
 
+// ============ Encoding Settings ============
+
+export function getEncodingSettings(): EncodingSettings {
+  return {
+    scale_4k_to_1080p: getSetting('scale_4k_to_1080p') !== '0',
+    bitrate_factor: parseFloat(getSetting('bitrate_factor') || '0.5'),
+    bitrate_cap_1080p: parseFloat(getSetting('bitrate_cap_1080p') || '6'),
+    bitrate_cap_720p: parseFloat(getSetting('bitrate_cap_720p') || '3'),
+    bitrate_cap_other: parseFloat(getSetting('bitrate_cap_other') || '3'),
+    min_file_size_mb: parseInt(getSetting('min_file_size_mb') || '500', 10),
+  };
+}
+
+export function updateEncodingSettings(settings: Partial<EncodingSettings>): EncodingSettings {
+  if (settings.scale_4k_to_1080p !== undefined) {
+    setSetting('scale_4k_to_1080p', settings.scale_4k_to_1080p ? '1' : '0');
+  }
+  if (settings.bitrate_factor !== undefined) {
+    setSetting('bitrate_factor', settings.bitrate_factor.toString());
+  }
+  if (settings.bitrate_cap_1080p !== undefined) {
+    setSetting('bitrate_cap_1080p', settings.bitrate_cap_1080p.toString());
+  }
+  if (settings.bitrate_cap_720p !== undefined) {
+    setSetting('bitrate_cap_720p', settings.bitrate_cap_720p.toString());
+  }
+  if (settings.bitrate_cap_other !== undefined) {
+    setSetting('bitrate_cap_other', settings.bitrate_cap_other.toString());
+  }
+  if (settings.min_file_size_mb !== undefined) {
+    setSetting('min_file_size_mb', settings.min_file_size_mb.toString());
+  }
+  return getEncodingSettings();
+}
+
 export default {
   // Libraries
   getAllLibraries,
@@ -761,4 +797,7 @@ export default {
   getQueueSettings,
   updateQueueSettings,
   updateLastLibraryId,
+  // Encoding Settings
+  getEncodingSettings,
+  updateEncodingSettings,
 };

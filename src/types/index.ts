@@ -13,6 +13,15 @@ export interface QueueSettings {
   last_library_id: number | null; // For round-robin tracking
 }
 
+export interface EncodingSettings {
+  scale_4k_to_1080p: boolean;
+  bitrate_factor: number;
+  bitrate_cap_1080p: number; // in Mbps
+  bitrate_cap_720p: number;  // in Mbps
+  bitrate_cap_other: number; // in Mbps
+  min_file_size_mb: number;
+}
+
 export interface Library {
   id: number;
   name: string;

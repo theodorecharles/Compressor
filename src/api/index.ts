@@ -13,6 +13,7 @@ import queueRouter from './routes/queue.js';
 import statsRouter from './routes/stats.js';
 import systemRouter from './routes/system.js';
 import testRouter from './routes/test.js';
+import settingsRouter from './routes/settings.js';
 import errorHandler from './middleware/errorHandler.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -39,6 +40,7 @@ export function createApp(): Express {
   app.use('/api/stats', statsRouter);
   app.use('/api/system', systemRouter);
   app.use('/api/test', testRouter);
+  app.use('/api/settings', settingsRouter);
 
   // Serve frontend in production
   if (config.nodeEnv === 'production') {
