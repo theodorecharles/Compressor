@@ -37,22 +37,31 @@ export default function Libraries(): React.ReactElement {
   const [localScanStatus, setLocalScanStatus] = useState<ScanStatus | null>(null);
 
   // Use WebSocket for real-time scan updates
-  const { scanStatus: wsScanStatus } = useWebSocket();
+  const { scanStatus: wsScanStatus, isConnected: wsConnected } = useWebSocket();
 
   // Prefer WebSocket status, fall back to local status
   const scanStatus = wsScanStatus ?? localScanStatus;
 
   useEffect(() => {
     loadLibraries();
-    // Load initial scan status via REST (WebSocket will take over for updates)
     loadScanStatus();
   }, []);
+
+  // Poll for scan status when WebSocket isn't connected
+  useEffect(() => {
+    if (wsConnected) return; // Don't poll if WebSocket is working
+
+    const interval = setInterval(loadScanStatus, 1000);
+    return () => clearInterval(interval);
+  }, [wsConnected]);
 
   async function loadScanStatus(): Promise<void> {
     try {
       const status = await getScanStatus();
       if (status.isScanning) {
         setLocalScanStatus(status);
+      } else {
+        setLocalScanStatus(null);
       }
     } catch {
       // Ignore errors
