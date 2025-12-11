@@ -167,6 +167,7 @@ export default function Libraries(): React.ReactElement {
               onClick={async () => {
                 try {
                   await stopScan();
+                  setLocalScanStatus(null); // Immediately hide the UI
                 } catch (err) {
                   console.error('Failed to stop scan:', err);
                 }
