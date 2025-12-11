@@ -50,7 +50,12 @@ export async function scanLibrary(library) {
 
     logger.info(`Found ${filesFound} video files in ${library.name}`);
 
-    for (const filePath of videoFiles) {
+    for (let i = 0; i < videoFiles.length; i++) {
+      const filePath = videoFiles[i];
+      // Log progress every 1000 files
+      if (i > 0 && i % 1000 === 0) {
+        logger.info(`Scan progress: ${i}/${videoFiles.length} files processed (${filesAdded} added, ${filesSkipped} skipped)`);
+      }
       try {
         const result = await processFile(filePath, library.id);
         if (result === 'added') {
