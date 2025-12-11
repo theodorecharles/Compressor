@@ -34,24 +34,80 @@ router.get('/history', (req: Request, res: Response) => {
   res.json(history.reverse());
 });
 
-// GET /api/stats/space-saved - Get space saved over time for chart (hourly)
+// GET /api/stats/space-saved - Get space saved over time for chart
+// Supports ranges: 24h, 7d, 30d, 90d, 1y, all
+// 24h and 7d return hourly data, others return daily data
 router.get('/space-saved', (req: Request, res: Response) => {
-  const hours = parseInt(req.query.hours as string) || 72;
-  const history = getHourlyStatsHistory(hours);
+  const range = (req.query.range as string) || '7d';
 
-  // Calculate cumulative space saved (data comes in DESC order, reverse for chronological)
-  let cumulative = 0;
-  const data = history.reverse().map(hour => {
-    cumulative += hour.total_space_saved || 0;
-    return {
-      hour_utc: hour.hour_utc,
-      hourly_saved: hour.total_space_saved || 0,
-      cumulative_saved: cumulative,
-      files_processed: hour.total_files_processed || 0,
-    };
-  });
+  let granularity: 'hourly' | 'daily';
+  let limit: number;
 
-  res.json(data);
+  switch (range) {
+    case '24h':
+      granularity = 'hourly';
+      limit = 24;
+      break;
+    case '7d':
+      granularity = 'hourly';
+      limit = 7 * 24;
+      break;
+    case '30d':
+      granularity = 'daily';
+      limit = 30;
+      break;
+    case '90d':
+      granularity = 'daily';
+      limit = 90;
+      break;
+    case '1y':
+      granularity = 'daily';
+      limit = 365;
+      break;
+    case 'all':
+      granularity = 'daily';
+      limit = 10000; // Effectively unlimited
+      break;
+    default:
+      granularity = 'hourly';
+      limit = 7 * 24;
+  }
+
+  if (granularity === 'hourly') {
+    const history = getHourlyStatsHistory(limit);
+
+    // Calculate cumulative space saved (data comes in DESC order, reverse for chronological)
+    let cumulative = 0;
+    const data = history.reverse().map(hour => {
+      cumulative += hour.total_space_saved || 0;
+      return {
+        timestamp: hour.hour_utc,
+        period_saved: hour.total_space_saved || 0,
+        cumulative_saved: cumulative,
+        files_processed: hour.total_files_processed || 0,
+        granularity: 'hourly',
+      };
+    });
+
+    res.json(data);
+  } else {
+    const history = getStatsHistory(limit);
+
+    // Calculate cumulative space saved (data comes in DESC order, reverse for chronological)
+    let cumulative = 0;
+    const data = history.reverse().map(day => {
+      cumulative += day.total_space_saved || 0;
+      return {
+        timestamp: day.date + 'T00:00:00Z',
+        period_saved: day.total_space_saved || 0,
+        cumulative_saved: cumulative,
+        files_processed: day.total_files_processed || 0,
+        granularity: 'daily',
+      };
+    });
+
+    res.json(data);
+  }
 });
 
 // GET /api/stats/recent - Get recent activity

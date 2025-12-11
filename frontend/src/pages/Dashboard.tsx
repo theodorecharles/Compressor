@@ -4,13 +4,22 @@ import { getStats, getSpaceSaved, getRecentActivity, getCurrentEncoding, getHeal
 import { usePolling } from '../hooks/useApi';
 import StatusBadge from '../components/StatusBadge';
 import { formatBytes, formatPercent } from '../utils/format';
-import type { Stats, RecentActivity, HealthStatus, SpaceSavedData, CurrentEncoding } from '../types';
+import type { Stats, RecentActivity, HealthStatus, SpaceSavedData, CurrentEncoding, TimeRange } from '../types';
 
 interface ChartData extends SpaceSavedData {
   cumulative_gb: number;
-  hourly_gb: number;
+  period_gb: number;
   local_time: string;
 }
+
+const TIME_RANGE_LABELS: Record<TimeRange, string> = {
+  '24h': '24 Hours',
+  '7d': '7 Days',
+  '30d': '30 Days',
+  '90d': '90 Days',
+  '1y': '1 Year',
+  'all': 'All Time',
+};
 
 interface StatCardProps {
   label: string;
@@ -36,7 +45,7 @@ function StatCard({ label, value, icon, color = 'text-white', subtitle, small }:
   );
 }
 
-type ChartMode = 'cumulative' | 'hourly';
+type ChartMode = 'cumulative' | 'period';
 
 export default function Dashboard(): React.ReactElement {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -44,6 +53,7 @@ export default function Dashboard(): React.ReactElement {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [chartMode, setChartMode] = useState<ChartMode>('cumulative');
+  const [timeRange, setTimeRange] = useState<TimeRange>('7d');
 
   const { data: currentEncoding } = usePolling<CurrentEncoding>(getCurrentEncoding, 2000);
 
@@ -51,21 +61,45 @@ export default function Dashboard(): React.ReactElement {
     loadData();
   }, []);
 
-  function formatLocalTime(utcString: string): string {
+  useEffect(() => {
+    loadChartData();
+  }, [timeRange]);
+
+  function formatLocalTime(utcString: string, granularity: 'hourly' | 'daily'): string {
     const date = new Date(utcString);
-    return date.toLocaleString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
+    if (granularity === 'hourly') {
+      return date.toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+      });
+    } else {
+      return date.toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+      });
+    }
+  }
+
+  async function loadChartData(): Promise<void> {
+    try {
+      const spaceData = await getSpaceSaved(timeRange);
+      setChartData(spaceData.map(d => ({
+        ...d,
+        cumulative_gb: d.cumulative_saved / 1024 / 1024 / 1024,
+        period_gb: d.period_saved / 1024 / 1024 / 1024,
+        local_time: formatLocalTime(d.timestamp, d.granularity),
+      })));
+    } catch (err) {
+      console.error('Failed to load chart data:', err);
+    }
   }
 
   async function loadData(): Promise<void> {
     try {
       const [statsData, spaceData, activityData, healthData] = await Promise.all([
         getStats(),
-        getSpaceSaved(72),
+        getSpaceSaved(timeRange),
         getRecentActivity(10),
         getHealth(),
       ]);
@@ -73,8 +107,8 @@ export default function Dashboard(): React.ReactElement {
       setChartData(spaceData.map(d => ({
         ...d,
         cumulative_gb: d.cumulative_saved / 1024 / 1024 / 1024,
-        hourly_gb: d.hourly_saved / 1024 / 1024 / 1024,
-        local_time: formatLocalTime(d.hour_utc),
+        period_gb: d.period_saved / 1024 / 1024 / 1024,
+        local_time: formatLocalTime(d.timestamp, d.granularity),
       })));
       setRecentActivity(activityData);
       setHealth(healthData);
@@ -189,29 +223,42 @@ export default function Dashboard(): React.ReactElement {
 
       {/* Space Saved Chart */}
       <div className="card">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <h2 className="text-lg font-semibold">Space Saved Over Time</h2>
-          <div className="flex gap-1 bg-slate-700 rounded-lg p-1">
-            <button
-              onClick={() => setChartMode('cumulative')}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                chartMode === 'cumulative'
-                  ? 'bg-slate-600 text-white'
-                  : 'text-slate-400 hover:text-white'
-              }`}
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value as TimeRange)}
+              className="input py-1 px-2 text-sm"
             >
-              Cumulative
-            </button>
-            <button
-              onClick={() => setChartMode('hourly')}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                chartMode === 'hourly'
-                  ? 'bg-slate-600 text-white'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Per Hour
-            </button>
+              {(Object.keys(TIME_RANGE_LABELS) as TimeRange[]).map((range) => (
+                <option key={range} value={range}>
+                  {TIME_RANGE_LABELS[range]}
+                </option>
+              ))}
+            </select>
+            <div className="flex gap-1 bg-slate-700 rounded-lg p-1">
+              <button
+                onClick={() => setChartMode('cumulative')}
+                className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                  chartMode === 'cumulative'
+                    ? 'bg-slate-600 text-white'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Cumulative
+              </button>
+              <button
+                onClick={() => setChartMode('period')}
+                className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                  chartMode === 'period'
+                    ? 'bg-slate-600 text-white'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                {chartData[0]?.granularity === 'hourly' ? 'Per Hour' : 'Per Day'}
+              </button>
+            </div>
           </div>
         </div>
         {chartData.length > 0 ? (
@@ -230,19 +277,23 @@ export default function Dashboard(): React.ReactElement {
                 fontSize={12}
                 unit=" GB"
                 domain={[0, 'auto']}
-                tickFormatter={(value: number) => value.toFixed(chartMode === 'hourly' ? 1 : 0)}
+                tickFormatter={(value: number) => value.toFixed(chartMode === 'period' ? 1 : 0)}
               />
               <Tooltip
                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }}
                 formatter={(value: number) => [
                   `${value.toFixed(2)} GB`,
-                  chartMode === 'cumulative' ? 'Cumulative Saved' : 'Saved This Hour'
+                  chartMode === 'cumulative'
+                    ? 'Cumulative Saved'
+                    : chartData[0]?.granularity === 'hourly'
+                      ? 'Saved This Hour'
+                      : 'Saved This Day'
                 ]}
                 labelFormatter={(label: string) => label}
               />
               <Line
                 type="monotone"
-                dataKey={chartMode === 'cumulative' ? 'cumulative_gb' : 'hourly_gb'}
+                dataKey={chartMode === 'cumulative' ? 'cumulative_gb' : 'period_gb'}
                 stroke="#22c55e"
                 strokeWidth={2}
                 dot={false}

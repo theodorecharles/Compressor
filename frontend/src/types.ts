@@ -73,11 +73,14 @@ export interface Stats {
 }
 
 export interface SpaceSavedData {
-  hour_utc: string;
-  hourly_saved: number;
+  timestamp: string;
+  period_saved: number;
   cumulative_saved: number;
   files_processed: number;
+  granularity: 'hourly' | 'daily';
 }
+
+export type TimeRange = '24h' | '7d' | '30d' | '90d' | '1y' | 'all';
 
 export interface RecentActivity {
   id: number;

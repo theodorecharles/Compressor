@@ -105,7 +105,7 @@ export const updateQueueSettings = (data: { sort_order?: QueueSortOrder; library
 // Stats
 export const getStats = (): Promise<Stats> => request('/stats');
 export const getStatsHistory = (days: number = 30): Promise<Stats[]> => request(`/stats/history?days=${days}`);
-export const getSpaceSaved = (hours: number = 72): Promise<SpaceSavedData[]> => request(`/stats/space-saved?hours=${hours}`);
+export const getSpaceSaved = (range: string = '7d'): Promise<SpaceSavedData[]> => request(`/stats/space-saved?range=${range}`);
 export const getRecentActivity = (limit: number = 20): Promise<RecentActivity[]> => request(`/stats/recent?limit=${limit}`);
 
 // System
