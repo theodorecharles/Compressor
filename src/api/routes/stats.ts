@@ -3,6 +3,7 @@ import {
   getOverallStats,
   getStatsHistory,
   getRecentActivity,
+  getHourlyStatsHistory,
 } from '../../db/queries.js';
 
 const router = Router();
@@ -33,20 +34,20 @@ router.get('/history', (req: Request, res: Response) => {
   res.json(history.reverse());
 });
 
-// GET /api/stats/space-saved - Get space saved over time for chart
+// GET /api/stats/space-saved - Get space saved over time for chart (hourly)
 router.get('/space-saved', (req: Request, res: Response) => {
-  const days = parseInt(req.query.days as string) || 30;
-  const history = getStatsHistory(days);
+  const hours = parseInt(req.query.hours as string) || 72;
+  const history = getHourlyStatsHistory(hours);
 
-  // Calculate cumulative space saved
+  // Calculate cumulative space saved (data comes in DESC order, reverse for chronological)
   let cumulative = 0;
-  const data = history.reverse().map(day => {
-    cumulative += day.total_space_saved || 0;
+  const data = history.reverse().map(hour => {
+    cumulative += hour.total_space_saved || 0;
     return {
-      date: day.date,
-      daily_saved: day.total_space_saved || 0,
+      hour_utc: hour.hour_utc,
+      hourly_saved: hour.total_space_saved || 0,
       cumulative_saved: cumulative,
-      files_processed: day.total_files_processed || 0,
+      files_processed: hour.total_files_processed || 0,
     };
   });
 

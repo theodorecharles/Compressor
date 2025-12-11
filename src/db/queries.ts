@@ -4,6 +4,7 @@ import type {
   Exclusion,
   File,
   Stats,
+  HourlyStats,
   EncodingLog,
   FileFilters,
   LibraryUpdates,
@@ -512,7 +513,64 @@ export function updateTodayStats(updates: StatsUpdates): boolean {
   values.push(today);
 
   const result = db.prepare(`UPDATE stats SET ${fields.join(', ')} WHERE date = ?`).run(...values);
+
+  // Also update hourly stats
+  updateHourlyStats(updates);
+
   return result.changes > 0;
+}
+
+function getCurrentHourUtc(): string {
+  const now = new Date();
+  // Format: YYYY-MM-DDTHH:00:00Z
+  return now.toISOString().slice(0, 13) + ':00:00Z';
+}
+
+export function getHourlyStats(): HourlyStats {
+  const db = getDb();
+  const hourUtc = getCurrentHourUtc();
+  let row = db.prepare('SELECT * FROM stats_hourly WHERE hour_utc = ?').get(hourUtc) as HourlyStats | undefined;
+
+  if (!row) {
+    db.prepare('INSERT INTO stats_hourly (hour_utc) VALUES (?)').run(hourUtc);
+    row = db.prepare('SELECT * FROM stats_hourly WHERE hour_utc = ?').get(hourUtc) as HourlyStats;
+  }
+
+  return row;
+}
+
+export function updateHourlyStats(updates: StatsUpdates): boolean {
+  const db = getDb();
+  const hourUtc = getCurrentHourUtc();
+
+  // Ensure current hour's row exists
+  getHourlyStats();
+
+  const fields: string[] = [];
+  const values: (string | number)[] = [];
+
+  for (const [key, value] of Object.entries(updates)) {
+    if (['total_files_processed', 'total_space_saved', 'files_finished', 'files_skipped', 'files_rejected', 'files_errored'].includes(key)) {
+      fields.push(`${key} = ${key} + ?`);
+      values.push(value as number);
+    }
+  }
+
+  if (fields.length === 0) return false;
+
+  values.push(hourUtc);
+
+  const result = db.prepare(`UPDATE stats_hourly SET ${fields.join(', ')} WHERE hour_utc = ?`).run(...values);
+  return result.changes > 0;
+}
+
+export function getHourlyStatsHistory(hours: number = 72): HourlyStats[] {
+  const db = getDb();
+  return db.prepare(`
+    SELECT * FROM stats_hourly
+    ORDER BY hour_utc DESC
+    LIMIT ?
+  `).all(hours) as HourlyStats[];
 }
 
 export function getStatsHistory(days: number = 30): Stats[] {
@@ -678,6 +736,9 @@ export default {
   updateTodayStats,
   getStatsHistory,
   getOverallStats,
+  getHourlyStats,
+  updateHourlyStats,
+  getHourlyStatsHistory,
   // Encoding Log
   createEncodingLog,
   getEncodingLogs,

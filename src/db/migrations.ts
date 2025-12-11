@@ -111,6 +111,28 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 3,
+    name: 'hourly_stats',
+    up: (db) => {
+      db.exec(`
+        -- Hourly stats table (stores UTC timestamps)
+        CREATE TABLE IF NOT EXISTS stats_hourly (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          hour_utc TEXT NOT NULL UNIQUE,
+          total_files_processed INTEGER DEFAULT 0,
+          total_space_saved INTEGER DEFAULT 0,
+          files_finished INTEGER DEFAULT 0,
+          files_skipped INTEGER DEFAULT 0,
+          files_rejected INTEGER DEFAULT 0,
+          files_errored INTEGER DEFAULT 0
+        );
+
+        -- Index for faster time-based queries
+        CREATE INDEX IF NOT EXISTS idx_stats_hourly_hour ON stats_hourly(hour_utc);
+      `);
+    },
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {

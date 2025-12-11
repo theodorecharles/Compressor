@@ -72,6 +72,17 @@ export interface Stats {
   files_errored: number;
 }
 
+export interface HourlyStats {
+  id: number;
+  hour_utc: string;
+  total_files_processed: number;
+  total_space_saved: number;
+  files_finished: number;
+  files_skipped: number;
+  files_rejected: number;
+  files_errored: number;
+}
+
 export interface EncodingLog {
   id: number;
   file_id: number;

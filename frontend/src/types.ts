@@ -73,8 +73,8 @@ export interface Stats {
 }
 
 export interface SpaceSavedData {
-  date: string;
-  daily_saved: number;
+  hour_utc: string;
+  hourly_saved: number;
   cumulative_saved: number;
   files_processed: number;
 }
