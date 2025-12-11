@@ -1,6 +1,7 @@
 import { spawn } from 'child_process';
-import { unlink, rename, stat } from 'fs/promises';
+import { unlink, stat, copyFile } from 'fs/promises';
 import { dirname, basename, join } from 'path';
+import { tmpdir } from 'os';
 import config from '../config.js';
 import logger from '../logger.js';
 import { probeFile } from './ffprobe.js';
@@ -21,7 +22,8 @@ export async function encodeFile(file) {
   const inputPath = file.file_path;
   const outputDir = dirname(inputPath);
   const inputBasename = basename(inputPath, '.' + inputPath.split('.').pop());
-  const tempOutputPath = join(outputDir, `${inputBasename}.temp.mkv`);
+  // Write temp file to /tmp for better performance (often RAM-backed)
+  const tempOutputPath = join(tmpdir(), `compressor-${file.id}-${Date.now()}.mkv`);
   const finalOutputPath = join(outputDir, `${inputBasename}.mkv`);
 
   logger.info(`Starting encode: ${inputPath}`);
@@ -89,8 +91,11 @@ export async function encodeFile(file) {
     // Delete original
     await unlink(inputPath);
 
-    // Rename temp to final
-    await rename(tempOutputPath, finalOutputPath);
+    // Copy from temp to final location (can't rename across filesystems)
+    await copyFile(tempOutputPath, finalOutputPath);
+
+    // Delete temp file
+    await unlink(tempOutputPath);
 
     const spaceSaved = originalSize - outputSize;
 
