@@ -155,10 +155,8 @@ export async function scanLibrary(library: Library): Promise<ScanResult> {
         logger.info(`Scan progress: ${i}/${videoFiles.length} files processed (${filesAdded} added, ${filesSkipped} skipped)`);
       }
 
-      // Broadcast progress every 10 files to keep clients updated
-      if (i % 10 === 0) {
-        broadcastScanProgress({ ...scanStatus });
-      }
+      // Broadcast progress for every file
+      broadcastScanProgress({ ...scanStatus });
 
       try {
         const result = await processFile(filePath, library.id);
