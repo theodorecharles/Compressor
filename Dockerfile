@@ -11,6 +11,22 @@ RUN cd frontend && npm ci
 COPY frontend ./frontend
 RUN cd frontend && npm run build
 
+# Build stage for backend
+FROM node:20-slim AS backend-builder
+
+WORKDIR /app
+
+# Copy package files and install all dependencies (including dev for TypeScript)
+COPY package*.json ./
+RUN npm ci
+
+# Copy tsconfig and source files
+COPY tsconfig.json ./
+COPY src ./src
+
+# Build TypeScript
+RUN npm run build
+
 # Runtime stage
 FROM nvidia/cuda:12.6.3-runtime-ubuntu24.04
 
@@ -37,8 +53,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
-# Copy backend source
-COPY src ./src
+# Copy built backend from builder stage
+COPY --from=backend-builder /app/dist ./dist
 
 # Copy built frontend from builder stage
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
@@ -53,4 +69,4 @@ ENV NVIDIA_DRIVER_CAPABILITIES=compute,video,utility
 
 EXPOSE 3000
 
-CMD ["node", "src/index.js"]
+CMD ["node", "dist/index.js"]
