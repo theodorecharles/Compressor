@@ -46,21 +46,19 @@ async function main() {
   const app = createApp();
   await startServer(app);
 
-  // Scan libraries on startup
-  logger.info('Scanning libraries...');
-  try {
-    await scanAllLibraries();
-  } catch (error) {
-    logger.error(`Library scan failed: ${error.message}`);
-  }
-
   // Start file watchers
   logger.info('Starting file watchers...');
   startWatching();
 
-  // Start encoding worker
+  // Start encoding worker immediately (don't wait for scan)
   logger.info('Starting encoding worker...');
   startWorker();
+
+  // Scan libraries in background
+  logger.info('Scanning libraries (running in background)...');
+  scanAllLibraries().catch(error => {
+    logger.error(`Library scan failed: ${error.message}`);
+  });
 
   // Set up periodic rescans
   if (config.scanIntervalSeconds > 0) {
