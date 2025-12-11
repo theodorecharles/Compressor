@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
+
+declare const __APP_VERSION__: string;
 import Dashboard from './pages/Dashboard';
 import Libraries from './pages/Libraries';
 import Exclusions from './pages/Exclusions';
@@ -51,7 +53,7 @@ function App(): React.ReactElement {
   const currentPage = navItems.find(item => item.to === location.pathname)?.label || 'Compressor';
 
   return (
-    <div className="min-h-screen flex">
+    <div className="h-screen flex overflow-hidden">
       {/* Mobile header */}
       <div className="fixed top-0 left-0 right-0 z-40 bg-slate-800 border-b border-slate-700 px-4 py-3 flex items-center gap-3 md:hidden">
         <button
@@ -115,13 +117,13 @@ function App(): React.ReactElement {
 
         <div className="mt-auto pt-4 border-t border-slate-700">
           <p className="text-slate-500 text-xs">
-            Powered by FFmpeg + NVENC
+            v{__APP_VERSION__} &middot; Powered by FFmpeg + NVENC
           </p>
         </div>
       </nav>
 
       {/* Main content */}
-      <main className="flex-1 p-4 md:p-6 overflow-auto pt-20 md:pt-6">
+      <main className="flex-1 p-4 md:p-6 overflow-y-auto pt-20 md:pt-6">
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/libraries" element={<Libraries />} />

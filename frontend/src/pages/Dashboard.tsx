@@ -285,7 +285,7 @@ export default function Dashboard(): React.ReactElement {
                 labelFormatter={(label: string) => label}
               />
               <Line
-                type="monotone"
+                type="linear"
                 dataKey={chartMode === 'cumulative' ? 'cumulative_gb' : 'period_gb'}
                 stroke="#22c55e"
                 strokeWidth={2}
