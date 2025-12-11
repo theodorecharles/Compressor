@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { getQueue, pauseQueue, resumeQueue, getCurrentEncoding } from '../api/client';
+import { getQueue, pauseQueue, resumeQueue, getCurrentEncoding, getQueueSettings, updateQueueSettings } from '../api/client';
 import { usePolling } from '../hooks/useApi';
 import StatusBadge from '../components/StatusBadge';
 import Modal from '../components/Modal';
 import { formatBytes, formatPercent } from '../utils/format';
-import type { File, CurrentEncoding } from '../types';
+import type { File, CurrentEncoding, QueueSettings, QueueSortOrder, LibraryPriority } from '../types';
 
 interface Pagination {
   limit: number;
@@ -19,6 +19,19 @@ interface QueueStatus {
   total: number;
 }
 
+const SORT_ORDER_LABELS: Record<QueueSortOrder, string> = {
+  bitrate_desc: 'Bitrate (Highest First)',
+  bitrate_asc: 'Bitrate (Lowest First)',
+  alphabetical: 'Alphabetical (A-Z)',
+  random: 'Random',
+};
+
+const LIBRARY_PRIORITY_LABELS: Record<LibraryPriority, string> = {
+  alphabetical_asc: 'Library Name (A-Z)',
+  alphabetical_desc: 'Library Name (Z-A)',
+  round_robin: 'Round Robin',
+};
+
 export default function Queue(): React.ReactElement {
   const [queue, setQueue] = useState<File[]>([]);
   const [queueStatus, setQueueStatus] = useState<QueueStatus | null>(null);
@@ -26,15 +39,41 @@ export default function Queue(): React.ReactElement {
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState<Pagination>({ limit: 50, offset: 0 });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [settings, setSettings] = useState<QueueSettings | null>(null);
+  const [settingsLoading, setSettingsLoading] = useState(false);
 
   const { data: currentEncoding } = usePolling<CurrentEncoding>(getCurrentEncoding, 2000);
 
   useEffect(() => {
     loadQueue();
+    loadSettings();
     const interval = setInterval(loadQueue, 10000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagination]);
+
+  async function loadSettings(): Promise<void> {
+    try {
+      const data = await getQueueSettings();
+      setSettings(data);
+    } catch (err) {
+      console.error('Failed to load queue settings:', err);
+    }
+  }
+
+  async function handleSettingChange(field: 'sort_order' | 'library_priority', value: string): Promise<void> {
+    setSettingsLoading(true);
+    try {
+      const data = await updateQueueSettings({ [field]: value });
+      setSettings(data);
+      // Reload queue to reflect new ordering
+      loadQueue();
+    } catch (err) {
+      alert('Failed to update setting: ' + (err as Error).message);
+    } finally {
+      setSettingsLoading(false);
+    }
+  }
 
   async function loadQueue(): Promise<void> {
     try {
@@ -95,27 +134,79 @@ export default function Queue(): React.ReactElement {
         </div>
       </div>
 
-      {/* Worker Status */}
-      <div className="card">
-        <div className="flex items-center gap-4">
-          <div className={`w-3 h-3 rounded-full ${
-            queueStatus?.isRunning
-              ? queueStatus?.isPaused
-                ? 'bg-yellow-500'
-                : 'bg-green-500 animate-pulse'
-              : 'bg-red-500'
-          }`} />
-          <div>
-            <p className="font-medium">
-              Worker: {queueStatus?.isRunning
+      {/* Worker Status and Settings */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="card">
+          <div className="flex items-center gap-4">
+            <div className={`w-3 h-3 rounded-full ${
+              queueStatus?.isRunning
                 ? queueStatus?.isPaused
-                  ? 'Paused'
-                  : 'Running'
-                : 'Stopped'}
-            </p>
-            <p className="text-slate-400 text-sm">
-              {total} files in queue
-            </p>
+                  ? 'bg-yellow-500'
+                  : 'bg-green-500 animate-pulse'
+                : 'bg-red-500'
+            }`} />
+            <div>
+              <p className="font-medium">
+                Worker: {queueStatus?.isRunning
+                  ? queueStatus?.isPaused
+                    ? 'Paused'
+                    : 'Running'
+                  : 'Stopped'}
+              </p>
+              <p className="text-slate-400 text-sm">
+                {total} files in queue
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Queue Settings */}
+        <div className="card">
+          <h3 className="font-medium mb-3">Queue Order</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-slate-400 text-sm block mb-1">File Sort</label>
+              <select
+                value={settings?.sort_order || 'bitrate_desc'}
+                onChange={(e) => handleSettingChange('sort_order', e.target.value)}
+                disabled={settingsLoading}
+                className="input w-full"
+              >
+                {settings?.available_sort_orders?.map((order) => (
+                  <option key={order} value={order}>
+                    {SORT_ORDER_LABELS[order]}
+                  </option>
+                )) || (
+                  <>
+                    <option value="bitrate_desc">Bitrate (Highest First)</option>
+                    <option value="bitrate_asc">Bitrate (Lowest First)</option>
+                    <option value="alphabetical">Alphabetical (A-Z)</option>
+                    <option value="random">Random</option>
+                  </>
+                )}
+              </select>
+            </div>
+            <div>
+              <label className="text-slate-400 text-sm block mb-1">Library Priority</label>
+              <select
+                value={settings?.library_priority || 'alphabetical_asc'}
+                onChange={(e) => handleSettingChange('library_priority', e.target.value)}
+                disabled={settingsLoading}
+                className="input w-full"
+              >
+                {settings?.available_library_priorities?.map((priority) => (
+                  <option key={priority} value={priority}>
+                    {LIBRARY_PRIORITY_LABELS[priority]}
+                  </option>
+                )) || (
+                  <>
+                    <option value="alphabetical_asc">Library Name (A-Z)</option>
+                    <option value="alphabetical_desc">Library Name (Z-A)</option>
+                    <option value="round_robin">Round Robin</option>
+                  </>
+                )}
+              </select>
+            </div>
           </div>
         </div>
       </div>

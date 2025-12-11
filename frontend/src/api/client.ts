@@ -12,6 +12,9 @@ import type {
   TestStatus,
   FilesResponse,
   PathExclusionResult,
+  QueueSettings,
+  QueueSortOrder,
+  LibraryPriority,
 } from '../types';
 
 const API_BASE = '/api';
@@ -96,6 +99,8 @@ export const getQueue = (params: Record<string, string | number | undefined> = {
 export const getCurrentEncoding = (): Promise<CurrentEncoding> => request('/queue/current');
 export const pauseQueue = (): Promise<{ message: string }> => request('/queue/pause', { method: 'POST' });
 export const resumeQueue = (): Promise<{ message: string }> => request('/queue/resume', { method: 'POST' });
+export const getQueueSettings = (): Promise<QueueSettings> => request('/queue/settings');
+export const updateQueueSettings = (data: { sort_order?: QueueSortOrder; library_priority?: LibraryPriority }): Promise<QueueSettings> => request('/queue/settings', { method: 'PUT', body: data });
 
 // Stats
 export const getStats = (): Promise<Stats> => request('/stats');
@@ -134,6 +139,8 @@ export default {
   getCurrentEncoding,
   pauseQueue,
   resumeQueue,
+  getQueueSettings,
+  updateQueueSettings,
   getStats,
   getStatsHistory,
   getSpaceSaved,
