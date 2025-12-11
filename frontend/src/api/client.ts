@@ -59,6 +59,7 @@ export const updateLibrary = (id: number, data: Partial<Library>): Promise<Libra
 export const deleteLibrary = (id: number): Promise<null> => request(`/libraries/${id}`, { method: 'DELETE' });
 export const scanLibrary = (id: number): Promise<{ message: string; library_id: number }> => request(`/libraries/${id}/scan`, { method: 'POST' });
 export const getScanStatus = (): Promise<ScanStatus> => request('/libraries/scan/status');
+export const stopScan = (): Promise<{ message: string }> => request('/libraries/scan/stop', { method: 'POST' });
 
 // Exclusions
 export const getExclusions = (libraryId: number | null = null): Promise<Exclusion[]> => {

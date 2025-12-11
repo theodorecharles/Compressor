@@ -1,5 +1,5 @@
 import React, { useState, useEffect, FormEvent } from 'react';
-import { getLibraries, createLibrary, updateLibrary, deleteLibrary, scanLibrary, getScanStatus } from '../api/client';
+import { getLibraries, createLibrary, updateLibrary, deleteLibrary, scanLibrary, getScanStatus, stopScan } from '../api/client';
 import Modal from '../components/Modal';
 import { formatPercent } from '../utils/format';
 import { useWebSocket } from '../hooks/useWebSocket';
@@ -161,7 +161,21 @@ export default function Libraries(): React.ReactElement {
       {/* Scan Status */}
       {scanStatus?.isScanning && (
         <div className="card border-l-4 border-blue-500">
-          <h2 className="text-lg font-semibold mb-4">Scanning: {scanStatus.currentLibrary}</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Scanning: {scanStatus.currentLibrary}</h2>
+            <button
+              onClick={async () => {
+                try {
+                  await stopScan();
+                } catch (err) {
+                  console.error('Failed to stop scan:', err);
+                }
+              }}
+              className="btn btn-danger text-sm py-1 px-3"
+            >
+              Stop
+            </button>
+          </div>
           <div className="space-y-4">
             {/* Finding files state */}
             {scanStatus.totalFiles < 0 ? (

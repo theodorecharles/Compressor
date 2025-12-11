@@ -28,6 +28,21 @@ const scanStatus: ScanStatus = {
   startedAt: null,
 };
 
+// Flag to stop scan
+let stopScanRequested = false;
+
+/**
+ * Request to stop the current scan
+ */
+export function stopScan(): boolean {
+  if (!scanStatus.isScanning) {
+    return false;
+  }
+  logger.info('Stop scan requested');
+  stopScanRequested = true;
+  return true;
+}
+
 /**
  * Get current scan status
  */
@@ -122,6 +137,13 @@ export async function scanLibrary(library: Library): Promise<ScanResult> {
     broadcastScanProgress({ ...scanStatus });
 
     for (let i = 0; i < videoFiles.length; i++) {
+      // Check if stop was requested
+      if (stopScanRequested) {
+        logger.info(`Scan stopped by user at ${i}/${videoFiles.length} files`);
+        stopScanRequested = false;
+        break;
+      }
+
       const filePath = videoFiles[i];
 
       // Update progress
@@ -133,8 +155,8 @@ export async function scanLibrary(library: Library): Promise<ScanResult> {
         logger.info(`Scan progress: ${i}/${videoFiles.length} files processed (${filesAdded} added, ${filesSkipped} skipped)`);
       }
 
-      // Broadcast progress every 100 files to keep clients updated without overwhelming them
-      if (i % 100 === 0) {
+      // Broadcast progress every 10 files to keep clients updated
+      if (i % 10 === 0) {
         broadcastScanProgress({ ...scanStatus });
       }
 

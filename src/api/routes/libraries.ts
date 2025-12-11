@@ -9,7 +9,7 @@ import {
   getLibraryFileCount,
   removeQueuedFilesForLibrary,
 } from '../../db/queries.js';
-import { scanLibrary, getScanStatus } from '../../services/scanner.js';
+import { scanLibrary, getScanStatus, stopScan } from '../../services/scanner.js';
 import { restartWatcher } from '../../services/watcher.js';
 import logger from '../../logger.js';
 
@@ -20,6 +20,16 @@ const router = Router();
 router.get('/scan/status', (_req: Request, res: Response) => {
   const status = getScanStatus();
   res.json(status);
+});
+
+// POST /api/libraries/scan/stop - Stop current scan
+router.post('/scan/stop', (_req: Request, res: Response) => {
+  const stopped = stopScan();
+  if (stopped) {
+    res.json({ message: 'Scan stop requested' });
+  } else {
+    res.status(400).json({ error: 'No scan in progress' });
+  }
 });
 
 // GET /api/libraries - List all libraries
