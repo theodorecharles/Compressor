@@ -215,10 +215,23 @@ function buildFfmpegArgs(inputPath: string, outputPath: string, metadata: VideoM
   // Encoding preset
   args.push('-preset', config.nvencPreset);
 
-  // Bitrate - use half of original, or CRF fallback
+  // Bitrate - use half of original, with resolution-based caps
   if (metadata.bitrate) {
     // Target bitrate is HALF of original (HEVC is ~50% more efficient)
-    const targetBitrate = Math.floor(metadata.bitrate / 2);
+    let targetBitrate = Math.floor(metadata.bitrate / 2);
+
+    // Apply resolution-based bitrate caps
+    const BITRATE_CAP_1080P = 6_000_000;  // 6 Mbps for 1080p
+    const BITRATE_CAP_720P = 3_000_000;   // 3 Mbps for 720p and below
+
+    if (!metadata.is4k) {
+      const height = metadata.height || 1080;
+      const cap = height <= 720 ? BITRATE_CAP_720P : BITRATE_CAP_1080P;
+      if (targetBitrate > cap) {
+        targetBitrate = cap;
+      }
+    }
+
     args.push('-b:v', targetBitrate.toString());
   } else {
     // CRF fallback when bitrate is unknown
