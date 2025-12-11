@@ -1,11 +1,15 @@
 import { spawn } from 'child_process';
-import { unlink, stat, copyFile } from 'fs/promises';
+import { unlink, stat, copyFile, chown } from 'fs/promises';
 import { dirname, basename, join } from 'path';
 import { tmpdir } from 'os';
 import config from '../config.js';
 import logger from '../logger.js';
 import { probeFile } from './ffprobe.js';
 import { updateFile, createEncodingLog, updateTodayStats } from '../db/queries.js';
+
+// User/group IDs for file ownership (nobody:users on Unraid)
+const FILE_UID = 99;
+const FILE_GID = 100;
 
 // Event emitter for progress updates
 let progressCallback = null;
@@ -93,6 +97,9 @@ export async function encodeFile(file) {
 
     // Copy from temp to final location (can't rename across filesystems)
     await copyFile(tempOutputPath, finalOutputPath);
+
+    // Set ownership to nobody:users
+    await chown(finalOutputPath, FILE_UID, FILE_GID);
 
     // Delete temp file
     await unlink(tempOutputPath);
