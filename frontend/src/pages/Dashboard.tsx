@@ -48,21 +48,20 @@ function StatCard({ label, value, icon, color = 'text-white', subtitle, small }:
 type ChartMode = 'cumulative' | 'period';
 
 export default function Dashboard(): React.ReactElement {
-  const [stats, setStats] = useState<Stats | null>(null);
   const [chartData, setChartData] = useState<ChartData[]>([]);
-  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
-  const [health, setHealth] = useState<HealthStatus | null>(null);
-  const [chartMode, setChartMode] = useState<ChartMode>('cumulative');
+  const [chartMode, setChartMode] = useState<ChartMode>('period');
   const [timeRange, setTimeRange] = useState<TimeRange>('7d');
 
   const { data: currentEncoding } = usePolling<CurrentEncoding>(getCurrentEncoding, 2000);
+  const { data: stats } = usePolling<Stats>(getStats, 5000);
+  const { data: recentActivity } = usePolling<RecentActivity[]>(() => getRecentActivity(10), 5000);
+  const { data: health } = usePolling<HealthStatus>(getHealth, 5000);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
+  // Poll chart data every 30 seconds (less frequent since it's historical)
   useEffect(() => {
     loadChartData();
+    const interval = setInterval(loadChartData, 30000);
+    return () => clearInterval(interval);
   }, [timeRange]);
 
   function formatLocalTime(utcString: string, granularity: 'hourly' | 'daily'): string {
@@ -92,28 +91,6 @@ export default function Dashboard(): React.ReactElement {
       })));
     } catch (err) {
       console.error('Failed to load chart data:', err);
-    }
-  }
-
-  async function loadData(): Promise<void> {
-    try {
-      const [statsData, spaceData, activityData, healthData] = await Promise.all([
-        getStats(),
-        getSpaceSaved(timeRange),
-        getRecentActivity(10),
-        getHealth(),
-      ]);
-      setStats(statsData);
-      setChartData(spaceData.map(d => ({
-        ...d,
-        cumulative_gb: d.cumulative_saved / 1024 / 1024 / 1024,
-        period_gb: d.period_saved / 1024 / 1024 / 1024,
-        local_time: formatLocalTime(d.timestamp, d.granularity),
-      })));
-      setRecentActivity(activityData);
-      setHealth(healthData);
-    } catch (err) {
-      console.error('Failed to load dashboard data:', err);
     }
   }
 
@@ -324,7 +301,7 @@ export default function Dashboard(): React.ReactElement {
       {/* Recent Activity */}
       <div className="card">
         <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-        {recentActivity.length > 0 ? (
+        {recentActivity && recentActivity.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="table">
               <thead>
