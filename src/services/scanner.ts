@@ -95,7 +95,7 @@ export async function scanLibrary(library: Library): Promise<ScanResult> {
   scanStatus.startedAt = new Date().toISOString();
   scanStatus.currentLibrary = library.name;
   scanStatus.currentLibraryId = library.id;
-  scanStatus.totalFiles = 0;
+  scanStatus.totalFiles = -1; // -1 indicates "finding files"
   scanStatus.processedFiles = 0;
   scanStatus.filesAdded = 0;
   scanStatus.filesSkipped = 0;
@@ -103,18 +103,22 @@ export async function scanLibrary(library: Library): Promise<ScanResult> {
   scanStatus.currentFile = null;
   scanStatus.lastError = null;
 
+  // Broadcast immediately so UI shows "finding files" state
+  broadcastScanProgress({ ...scanStatus });
+
   let filesFound = 0;
   let filesAdded = 0;
   let filesSkipped = 0;
 
   try {
+    logger.info(`Finding video files in ${library.path}...`);
     const videoFiles = await findVideoFiles(library.path);
     filesFound = videoFiles.length;
     scanStatus.totalFiles = filesFound;
 
     logger.info(`Found ${filesFound} video files in ${library.name}`);
 
-    // Broadcast initial status
+    // Broadcast that we found the files
     broadcastScanProgress({ ...scanStatus });
 
     for (let i = 0; i < videoFiles.length; i++) {
