@@ -83,13 +83,13 @@ export default function TestEncode(): React.ReactElement {
 
       <div className="card">
         <h2 className="text-lg font-semibold mb-4">About Test Encoding</h2>
-        <div className="text-slate-300 space-y-2">
+        <div className="text-neutral-300 space-y-2">
           <p>
             Test encoding lets you transcode files <strong>without replacing the originals</strong>.
             Output files are saved to a separate test folder so you can review the quality before
             enabling full encoding.
           </p>
-          <p className="text-slate-400 text-sm">
+          <p className="text-neutral-400 text-sm">
             This is useful for verifying that the encoding settings produce acceptable quality
             for your media.
           </p>
@@ -110,7 +110,7 @@ export default function TestEncode(): React.ReactElement {
           <div className="space-y-4">
             <div className="flex gap-4 items-end">
               <div>
-                <label className="block text-sm text-slate-400 mb-1">
+                <label className="block text-sm text-neutral-400 mb-1">
                   Number of random files
                 </label>
                 <input
@@ -123,7 +123,7 @@ export default function TestEncode(): React.ReactElement {
                   disabled={selectedFiles.length > 0}
                 />
               </div>
-              <span className="text-slate-400 pb-2">or</span>
+              <span className="text-neutral-400 pb-2">or</span>
               <button
                 onClick={() => setShowFilePicker(!showFilePicker)}
                 className="btn btn-secondary"
@@ -134,15 +134,15 @@ export default function TestEncode(): React.ReactElement {
             </div>
 
             {showFilePicker && (
-              <div className="border border-slate-600 rounded-lg p-4 max-h-60 overflow-y-auto">
+              <div className="border border-neutral-600 rounded-lg p-4 max-h-60 overflow-y-auto">
                 {availableFiles.length === 0 ? (
-                  <p className="text-slate-400">No queued files available</p>
+                  <p className="text-neutral-400">No queued files available</p>
                 ) : (
                   <div className="space-y-1">
                     {availableFiles.map((file) => (
                       <label
                         key={file.id}
-                        className="flex items-center gap-2 p-2 hover:bg-slate-700 rounded cursor-pointer"
+                        className="flex items-center gap-2 p-2 hover:bg-neutral-700 rounded cursor-pointer"
                       >
                         <input
                           type="checkbox"
@@ -151,7 +151,7 @@ export default function TestEncode(): React.ReactElement {
                           className="rounded"
                         />
                         <span className="truncate flex-1">{file.file_name}</span>
-                        <span className="text-slate-400 text-sm">{formatBytes(file.original_size)}</span>
+                        <span className="text-neutral-400 text-sm">{formatBytes(file.original_size)}</span>
                       </label>
                     ))}
                   </div>
@@ -182,20 +182,20 @@ export default function TestEncode(): React.ReactElement {
 
           {status.summary && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-slate-700 rounded-lg p-3">
-                <p className="text-slate-400 text-sm">Total</p>
+              <div className="bg-neutral-700 rounded-lg p-3">
+                <p className="text-neutral-400 text-sm">Total</p>
                 <p className="text-xl font-bold">{status.summary.total}</p>
               </div>
-              <div className="bg-slate-700 rounded-lg p-3">
-                <p className="text-slate-400 text-sm">Successful</p>
+              <div className="bg-neutral-700 rounded-lg p-3">
+                <p className="text-neutral-400 text-sm">Successful</p>
                 <p className="text-xl font-bold text-green-400">{status.summary.successful}</p>
               </div>
-              <div className="bg-slate-700 rounded-lg p-3">
-                <p className="text-slate-400 text-sm">Failed</p>
+              <div className="bg-neutral-700 rounded-lg p-3">
+                <p className="text-neutral-400 text-sm">Failed</p>
                 <p className="text-xl font-bold text-red-400">{status.summary.failed}</p>
               </div>
-              <div className="bg-slate-700 rounded-lg p-3">
-                <p className="text-slate-400 text-sm">Avg Savings</p>
+              <div className="bg-neutral-700 rounded-lg p-3">
+                <p className="text-neutral-400 text-sm">Avg Savings</p>
                 <p className="text-xl font-bold text-green-400">{status.summary.average_savings_percent}%</p>
               </div>
             </div>
@@ -215,23 +215,23 @@ export default function TestEncode(): React.ReactElement {
                       {result.inputPath?.split('/').pop() || 'Unknown'}
                     </p>
                     {result.success ? (
-                      <div className="text-sm text-slate-300 mt-2 space-y-1">
+                      <div className="text-sm text-neutral-300 mt-2 space-y-1">
                         <p>
-                          <span className="text-slate-400">Original:</span> {formatBytes(result.originalSize)}
+                          <span className="text-neutral-400">Original:</span> {formatBytes(result.originalSize)}
                           {' → '}
-                          <span className="text-slate-400">New:</span> {formatBytes(result.outputSize)}
+                          <span className="text-neutral-400">New:</span> {formatBytes(result.outputSize)}
                         </p>
                         <p className="text-green-400">
                           Saved: {formatBytes(result.spaceSaved)} ({result.savingsPercent}%)
                         </p>
                         {result.metadata && (
-                          <p className="text-slate-400">
+                          <p className="text-neutral-400">
                             {result.metadata.codec} | {result.metadata.width}x{result.metadata.height}
                             {result.metadata.is4k && ' | 4K→1080p'}
                             {result.metadata.isHdr && ' | HDR→SDR'}
                           </p>
                         )}
-                        <p className="text-slate-500 text-xs truncate">
+                        <p className="text-neutral-500 text-xs truncate">
                           Output: {result.outputPath}
                         </p>
                       </div>
@@ -252,8 +252,8 @@ export default function TestEncode(): React.ReactElement {
       {/* Instructions */}
       <div className="card">
         <h2 className="text-lg font-semibold mb-4">After Testing</h2>
-        <ol className="list-decimal list-inside text-slate-300 space-y-2">
-          <li>Review the test output files in the <code className="bg-slate-700 px-1 rounded">data/test-output</code> folder</li>
+        <ol className="list-decimal list-inside text-neutral-300 space-y-2">
+          <li>Review the test output files in the <code className="bg-neutral-700 px-1 rounded">data/test-output</code> folder</li>
           <li>Compare video quality with the originals using your preferred video player</li>
           <li>If quality is acceptable, the queue will process files automatically</li>
           <li>Clean up test files when done to save space</li>

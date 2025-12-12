@@ -18,7 +18,7 @@ const statusClasses: Record<FileStatus, string> = {
 
 export default function StatusBadge({ status }: StatusBadgeProps): React.ReactElement {
   return (
-    <span className={`badge ${statusClasses[status] || 'bg-slate-600'}`}>
+    <span className={`badge ${statusClasses[status] || 'bg-neutral-600'}`}>
       {status}
     </span>
   );

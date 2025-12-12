@@ -15,12 +15,12 @@ function ToggleSwitch({ checked, onChange }: ToggleSwitchProps): React.ReactElem
     <button
       onClick={onChange}
       className={`relative w-10 h-5 rounded-full transition-colors ${
-        checked ? 'bg-green-600' : 'bg-slate-600'
+        checked ? 'bg-green-600' : 'bg-neutral-600'
       }`}
     >
       <span
         className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${
-          checked ? 'translate-x-5' : ''
+          checked ? 'tranneutral-x-5' : ''
         }`}
       />
     </button>
@@ -190,7 +190,7 @@ export default function Libraries(): React.ReactElement {
             {scanStatus.totalFiles < 0 ? (
               <div className="flex items-center gap-3">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
-                <span className="text-slate-300">Finding video files...</span>
+                <span className="text-neutral-300">Finding video files...</span>
               </div>
             ) : (
               <>
@@ -200,7 +200,7 @@ export default function Libraries(): React.ReactElement {
                     <span>Progress</span>
                     <span>{scanStatus.processedFiles.toLocaleString()} / {scanStatus.totalFiles.toLocaleString()} files</span>
                   </div>
-                  <div className="w-full bg-slate-700 rounded-full h-4">
+                  <div className="w-full bg-neutral-700 rounded-full h-4">
                     <div
                       className="bg-blue-500 h-4 rounded-full transition-all duration-500 flex items-center justify-center text-xs font-medium"
                       style={{ width: `${scanStatus.totalFiles > 0 ? Math.max((scanStatus.processedFiles / scanStatus.totalFiles) * 100, 1) : 0}%` }}
@@ -213,15 +213,15 @@ export default function Libraries(): React.ReactElement {
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div>
-                    <span className="text-slate-400">Added:</span>{' '}
+                    <span className="text-neutral-400">Added:</span>{' '}
                     <span className="text-green-400">{scanStatus.filesAdded.toLocaleString()}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400">Skipped:</span>{' '}
+                    <span className="text-neutral-400">Skipped:</span>{' '}
                     <span className="text-yellow-400">{scanStatus.filesSkipped.toLocaleString()}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400">Errors:</span>{' '}
+                    <span className="text-neutral-400">Errors:</span>{' '}
                     <span className="text-red-400">{scanStatus.filesErrored.toLocaleString()}</span>
                   </div>
                 </div>
@@ -229,8 +229,8 @@ export default function Libraries(): React.ReactElement {
                 {/* Current file */}
                 {scanStatus.currentFile && (
                   <div>
-                    <span className="text-slate-400 text-sm">Current file:</span>
-                    <p className="font-mono text-xs text-slate-300 truncate">{scanStatus.currentFile}</p>
+                    <span className="text-neutral-400 text-sm">Current file:</span>
+                    <p className="font-mono text-xs text-neutral-300 truncate">{scanStatus.currentFile}</p>
                   </div>
                 )}
               </>
@@ -250,7 +250,7 @@ export default function Libraries(): React.ReactElement {
 
       {libraries.length === 0 ? (
         <div className="card text-center py-8">
-          <p className="text-slate-400 mb-4">No libraries configured yet.</p>
+          <p className="text-neutral-400 mb-4">No libraries configured yet.</p>
           <button onClick={openAddModal} className="btn btn-primary">
             Add Your First Library
           </button>
@@ -272,7 +272,7 @@ export default function Libraries(): React.ReactElement {
               {libraries.map((lib) => (
                 <tr key={lib.id}>
                   <td className="font-medium">{lib.name}</td>
-                  <td className="text-slate-400 max-w-xs truncate">{lib.path}</td>
+                  <td className="text-neutral-400 max-w-xs truncate">{lib.path}</td>
                   <td>{lib.file_count}</td>
                   <td>
                     <ToggleSwitch
@@ -343,7 +343,7 @@ export default function Libraries(): React.ReactElement {
               placeholder="e.g., /media/movies"
               required
             />
-            <p className="text-slate-400 text-sm mt-1">
+            <p className="text-neutral-400 text-sm mt-1">
               Absolute path to the media folder
             </p>
           </div>

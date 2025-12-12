@@ -35,9 +35,9 @@ function StatCard({ label, value, icon, color = 'text-white', subtitle, small }:
     <div className={`card ${small ? 'p-4' : ''}`}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-slate-400 text-sm">{label}</p>
+          <p className="text-neutral-400 text-sm">{label}</p>
           <p className={`${small ? 'text-xl' : 'text-2xl'} font-bold ${color}`}>{value}</p>
-          {subtitle && <p className="text-slate-400 text-xs mt-1">{subtitle}</p>}
+          {subtitle && <p className="text-neutral-400 text-xs mt-1">{subtitle}</p>}
         </div>
         <span className={`${small ? 'text-xl' : 'text-3xl'}`}>{icon}</span>
       </div>
@@ -107,7 +107,7 @@ export default function Dashboard(): React.ReactElement {
             </span>
             <div>
               <p className="font-medium">System Status: {health.status}</p>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-neutral-400">
                 FFprobe: {health.ffprobe ? '✓' : '✗'} |
                 NVENC: {health.nvenc ? '✓' : '✗'} |
                 Worker: {health.worker ? (health.worker_paused ? 'Paused' : 'Running') : 'Stopped'}
@@ -137,13 +137,13 @@ export default function Dashboard(): React.ReactElement {
               Cancel
             </button>
           </div>
-          <p className="text-slate-300 truncate">{currentEncoding.file.file_name}</p>
+          <p className="text-neutral-300 truncate">{currentEncoding.file.file_name}</p>
           <div className="mt-2">
-            <div className="flex justify-between text-sm text-slate-400 mb-1">
+            <div className="flex justify-between text-sm text-neutral-400 mb-1">
               <span>Progress</span>
               <span>{formatPercent(currentEncoding.progress)}</span>
             </div>
-            <div className="w-full bg-slate-700 rounded-full h-2">
+            <div className="w-full bg-neutral-700 rounded-full h-2">
               <div
                 className="bg-yellow-500 h-2 rounded-full transition-all duration-500"
                 style={{ width: `${currentEncoding.progress}%` }}
@@ -230,13 +230,13 @@ export default function Dashboard(): React.ReactElement {
                 </option>
               ))}
             </select>
-            <div className="flex gap-1 bg-slate-700 rounded-lg p-1">
+            <div className="flex gap-1 bg-neutral-700 rounded-lg p-1">
               <button
                 onClick={() => setChartMode('cumulative')}
                 className={`px-3 py-1 text-sm rounded-md transition-colors ${
                   chartMode === 'cumulative'
-                    ? 'bg-slate-600 text-white'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-neutral-600 text-white'
+                    : 'text-neutral-400 hover:text-white'
                 }`}
               >
                 Cumulative
@@ -245,8 +245,8 @@ export default function Dashboard(): React.ReactElement {
                 onClick={() => setChartMode('period')}
                 className={`px-3 py-1 text-sm rounded-md transition-colors ${
                   chartMode === 'period'
-                    ? 'bg-slate-600 text-white'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-neutral-600 text-white'
+                    : 'text-neutral-400 hover:text-white'
                 }`}
               >
                 {chartData[0]?.granularity === 'hourly' ? 'Per Hour' : 'Per Day'}
@@ -294,7 +294,7 @@ export default function Dashboard(): React.ReactElement {
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <p className="text-slate-400 text-center py-8">No data yet. Start encoding to see stats!</p>
+          <p className="text-neutral-400 text-center py-8">No data yet. Start encoding to see stats!</p>
         )}
       </div>
 
@@ -331,7 +331,7 @@ export default function Dashboard(): React.ReactElement {
             </table>
           </div>
         ) : (
-          <p className="text-slate-400 text-center py-4">No recent activity</p>
+          <p className="text-neutral-400 text-center py-4">No recent activity</p>
         )}
       </div>
     </div>

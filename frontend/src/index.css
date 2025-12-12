@@ -3,11 +3,11 @@
 @tailwind utilities;
 
 body {
-  @apply bg-slate-900 text-slate-100;
+  @apply bg-neutral-900 text-neutral-100;
 }
 
 .card {
-  @apply bg-slate-800 rounded-lg p-6 shadow-lg;
+  @apply bg-neutral-800 rounded-lg p-6 shadow-lg border border-neutral-700/50;
 }
 
 .btn {
@@ -15,63 +15,63 @@ body {
 }
 
 .btn-primary {
-  @apply bg-green-600 hover:bg-green-700 text-white;
+  @apply bg-green-600 hover:bg-green-500 text-white shadow-md hover:shadow-lg transition-all;
 }
 
 .btn-secondary {
-  @apply bg-slate-600 hover:bg-slate-700 text-white;
+  @apply bg-neutral-700 hover:bg-neutral-600 text-white border border-neutral-600;
 }
 
 .btn-danger {
-  @apply bg-red-600 hover:bg-red-700 text-white;
+  @apply bg-red-600 hover:bg-red-500 text-white shadow-md hover:shadow-lg transition-all;
 }
 
 .btn-warning {
-  @apply bg-yellow-600 hover:bg-yellow-700 text-white;
+  @apply bg-yellow-600 hover:bg-yellow-500 text-white shadow-md hover:shadow-lg transition-all;
 }
 
 .input {
-  @apply bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent;
+  @apply bg-neutral-800 border border-neutral-600 rounded-md px-3 py-2 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 shadow-inner transition-all;
 }
 
 .select {
-  @apply bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent;
+  @apply bg-neutral-800 border border-neutral-600 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 shadow-inner transition-all;
 }
 
 .badge {
-  @apply px-2 py-1 rounded-full text-xs font-medium;
+  @apply px-2.5 py-1 rounded-full text-xs font-medium shadow-sm;
 }
 
 .badge-queued {
-  @apply bg-blue-600 text-white;
+  @apply bg-blue-600/90 text-white ring-1 ring-blue-500/50;
 }
 
 .badge-encoding {
-  @apply bg-yellow-600 text-white;
+  @apply bg-yellow-600/90 text-white ring-1 ring-yellow-500/50;
 }
 
 .badge-finished {
-  @apply bg-green-600 text-white;
+  @apply bg-green-600/90 text-white ring-1 ring-green-500/50;
 }
 
 .badge-skipped {
-  @apply bg-slate-600 text-white;
+  @apply bg-neutral-600 text-white ring-1 ring-neutral-500/50;
 }
 
 .badge-excluded {
-  @apply bg-purple-600 text-white;
+  @apply bg-purple-600/90 text-white ring-1 ring-purple-500/50;
 }
 
 .badge-errored {
-  @apply bg-red-600 text-white;
+  @apply bg-red-600/90 text-white ring-1 ring-red-500/50;
 }
 
 .badge-rejected {
-  @apply bg-orange-600 text-white;
+  @apply bg-orange-600/90 text-white ring-1 ring-orange-500/50;
 }
 
 .badge-cancelled {
-  @apply bg-gray-500 text-white;
+  @apply bg-neutral-500 text-white ring-1 ring-neutral-400/50;
 }
 
 .table {
@@ -79,13 +79,17 @@ body {
 }
 
 .table th {
-  @apply text-left px-4 py-3 text-slate-400 font-medium text-sm uppercase tracking-wider border-b border-slate-700;
+  @apply text-left px-4 py-3 text-neutral-400 font-medium text-sm uppercase tracking-wider border-b border-neutral-700 bg-neutral-800/50;
 }
 
 .table td {
-  @apply px-4 py-3 border-b border-slate-700;
+  @apply px-4 py-3 border-b border-neutral-700/50;
+}
+
+.table tr {
+  @apply transition-colors;
 }
 
 .table tr:hover {
-  @apply bg-slate-700/50;
+  @apply bg-neutral-700/30;
 }

@@ -11,19 +11,19 @@ interface ExclusionItemProps {
 
 function ExclusionItem({ exclusion, onDelete, showLibrary }: ExclusionItemProps): React.ReactElement {
   return (
-    <div className="flex items-center justify-between bg-slate-700 rounded-lg p-3">
+    <div className="flex items-center justify-between bg-neutral-700 rounded-lg p-3">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className={`badge ${exclusion.type === 'folder' ? 'bg-blue-600' : 'bg-purple-600'}`}>
             {exclusion.type}
           </span>
           {showLibrary && exclusion.library_name && (
-            <span className="badge bg-slate-600">{exclusion.library_name}</span>
+            <span className="badge bg-neutral-600">{exclusion.library_name}</span>
           )}
         </div>
         <p className="font-mono text-sm mt-1 truncate">{exclusion.pattern}</p>
         {exclusion.reason && (
-          <p className="text-slate-400 text-sm mt-1">{exclusion.reason}</p>
+          <p className="text-neutral-400 text-sm mt-1">{exclusion.reason}</p>
         )}
       </div>
       <button
@@ -140,12 +140,12 @@ export default function Exclusions(): React.ReactElement {
       {/* Global Exclusions */}
       <div className="card">
         <h2 className="text-lg font-semibold mb-4">Global Exclusions</h2>
-        <p className="text-slate-400 text-sm mb-4">
+        <p className="text-neutral-400 text-sm mb-4">
           These patterns apply to all libraries.
         </p>
 
         {globalExclusions.length === 0 ? (
-          <p className="text-slate-500 text-center py-4">No global exclusions</p>
+          <p className="text-neutral-500 text-center py-4">No global exclusions</p>
         ) : (
           <div className="space-y-2">
             {globalExclusions.map((exc) => (
@@ -160,7 +160,7 @@ export default function Exclusions(): React.ReactElement {
         <h2 className="text-lg font-semibold mb-4">Library-Specific Exclusions</h2>
 
         {libraryExclusions.length === 0 ? (
-          <p className="text-slate-500 text-center py-4">No library-specific exclusions</p>
+          <p className="text-neutral-500 text-center py-4">No library-specific exclusions</p>
         ) : (
           <div className="space-y-2">
             {libraryExclusions.map((exc) => (
@@ -173,11 +173,11 @@ export default function Exclusions(): React.ReactElement {
       {/* Example Patterns */}
       <div className="card">
         <h2 className="text-lg font-semibold mb-4">Pattern Examples</h2>
-        <div className="text-sm space-y-2 text-slate-400">
-          <p><code className="bg-slate-700 px-2 py-1 rounded">/media/tv/Frasier</code> - Exact folder match</p>
-          <p><code className="bg-slate-700 px-2 py-1 rounded">**/4K/**</code> - Any file in a 4K subfolder</p>
-          <p><code className="bg-slate-700 px-2 py-1 rounded">**/*Remux*</code> - Any file with "Remux" in the name</p>
-          <p><code className="bg-slate-700 px-2 py-1 rounded">**/Season 01/*</code> - First season of any show</p>
+        <div className="text-sm space-y-2 text-neutral-400">
+          <p><code className="bg-neutral-700 px-2 py-1 rounded">/media/tv/Frasier</code> - Exact folder match</p>
+          <p><code className="bg-neutral-700 px-2 py-1 rounded">**/4K/**</code> - Any file in a 4K subfolder</p>
+          <p><code className="bg-neutral-700 px-2 py-1 rounded">**/*Remux*</code> - Any file with "Remux" in the name</p>
+          <p><code className="bg-neutral-700 px-2 py-1 rounded">**/Season 01/*</code> - First season of any show</p>
         </div>
       </div>
 
