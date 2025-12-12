@@ -180,4 +180,4 @@ Pre-built images are available:
 
 ## License
 
-MIT
+GPLv3
