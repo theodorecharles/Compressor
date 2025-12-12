@@ -125,7 +125,7 @@ export default function Exclusions(): React.ReactElement {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Exclusions</h1>
+        <h1 className="text-3xl font-bold gradient-text">Exclusions</h1>
         <button onClick={openAddModal} className="btn btn-primary">
           Add Exclusion
         </button>

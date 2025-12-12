@@ -105,7 +105,7 @@ export default function Settings(): React.ReactElement {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Encoding Settings</h1>
+      <h1 className="text-3xl font-bold gradient-text">Encoding Settings</h1>
 
       {error && (
         <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded">

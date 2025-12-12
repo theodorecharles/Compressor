@@ -120,7 +120,7 @@ export default function Queue(): React.ReactElement {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Encoding Queue</h1>
+        <h1 className="text-3xl font-bold gradient-text">Encoding Queue</h1>
         <div className="flex gap-2">
           {queueStatus?.isPaused ? (
             <button onClick={handleResume} className="btn btn-primary">
@@ -138,13 +138,22 @@ export default function Queue(): React.ReactElement {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="card">
           <div className="flex items-center gap-4">
-            <div className={`w-3 h-3 rounded-full ${
-              queueStatus?.isRunning
-                ? queueStatus?.isPaused
-                  ? 'bg-yellow-500'
-                  : 'bg-green-500 animate-pulse'
-                : 'bg-red-500'
-            }`} />
+            <div
+              className={`w-4 h-4 rounded-full ${
+                queueStatus?.isRunning
+                  ? queueStatus?.isPaused
+                    ? 'bg-yellow-500'
+                    : 'bg-green-500 animate-pulse'
+                  : 'bg-red-500'
+              }`}
+              style={{
+                boxShadow: queueStatus?.isRunning
+                  ? queueStatus?.isPaused
+                    ? '0 0 20px rgba(234, 179, 8, 0.8)'
+                    : '0 0 20px rgba(34, 197, 94, 0.8), 0 0 40px rgba(34, 197, 94, 0.4)'
+                  : '0 0 20px rgba(239, 68, 68, 0.8)'
+              }}
+            />
             <div>
               <p className="font-medium">
                 Worker: {queueStatus?.isRunning
@@ -213,8 +222,11 @@ export default function Queue(): React.ReactElement {
 
       {/* Currently Encoding */}
       {currentEncoding?.encoding && currentEncoding.file && (
-        <div className="card border-l-4 border-yellow-500">
-          <h2 className="text-lg font-semibold mb-4">Currently Encoding</h2>
+        <div className="card border-l-4 border-yellow-500 encoding-pulse">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-3">
+            <span className="inline-block w-3 h-3 rounded-full bg-yellow-500 animate-pulse shadow-neon-yellow" style={{ boxShadow: '0 0 20px rgba(234, 179, 8, 0.8)' }} />
+            Currently Encoding
+          </h2>
           <div className="space-y-4">
             <div>
               <p className="text-lg font-medium truncate">{currentEncoding.file.file_name}</p>
@@ -242,27 +254,15 @@ export default function Queue(): React.ReactElement {
 
             <div>
               <div className="flex justify-between text-sm mb-2">
-                <span className="text-neutral-400">Progress</span>
-                <span className="font-medium text-white">{formatPercent(currentEncoding.progress)}</span>
+                <span className="text-neutral-400 font-medium">Progress</span>
+                <span className="font-bold text-yellow-400 neon-yellow">{formatPercent(currentEncoding.progress)}</span>
               </div>
-              <div
-                className="w-full h-4 rounded-full overflow-hidden"
-                style={{
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                  boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4)'
-                }}
-              >
+              <div className="progress-container h-5">
                 <div
-                  className="h-full rounded-full transition-all duration-500 flex items-center justify-center text-xs font-medium"
-                  style={{
-                    width: `${Math.max(currentEncoding.progress, 5)}%`,
-                    background: 'linear-gradient(to bottom, #facc15, #eab308)',
-                    boxShadow: '0 0 12px rgba(234, 179, 8, 0.4)',
-                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
-                  }}
+                  className="progress-bar-yellow flex items-center justify-center text-xs font-bold"
+                  style={{ width: `${Math.max(currentEncoding.progress, 5)}%` }}
                 >
-                  {currentEncoding.progress > 10 ? formatPercent(currentEncoding.progress) : ''}
+                  {currentEncoding.progress > 15 ? formatPercent(currentEncoding.progress) : ''}
                 </div>
               </div>
             </div>
