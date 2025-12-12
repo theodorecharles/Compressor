@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
+import { Routes, Route, NavLink } from 'react-router-dom';
 
 declare const __APP_VERSION__: string;
 import Dashboard from './pages/Dashboard';
@@ -38,7 +38,6 @@ function NavItem({ to, label, icon, onClick }: NavItemProps): React.ReactElement
 
 function App(): React.ReactElement {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const location = useLocation();
 
   const closeSidebar = () => setSidebarOpen(false);
 
@@ -51,8 +50,6 @@ function App(): React.ReactElement {
     { to: '/settings', label: 'Settings', icon: '⚙️' },
     { to: '/test', label: 'Test Encode', icon: '🧪' },
   ];
-
-  const currentPage = navItems.find(item => item.to === location.pathname)?.label || 'Compressor';
 
   return (
     <div className="h-screen flex overflow-hidden">
