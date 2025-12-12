@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
+import { Routes, Route, NavLink } from 'react-router-dom';
 
 declare const __APP_VERSION__: string;
 import Dashboard from './pages/Dashboard';
@@ -23,22 +23,27 @@ function NavItem({ to, label, icon, onClick }: NavItemProps): React.ReactElement
       to={to}
       onClick={onClick}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-4 py-2 rounded-md transition-colors ${
+        `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
           isActive
-            ? 'bg-green-600 text-white'
-            : 'text-slate-300 hover:bg-slate-700'
+            ? 'bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg shadow-green-500/20'
+            : 'text-neutral-300 hover:bg-white/5 hover:text-white'
         }`
       }
+      style={({ isActive }) => isActive ? {
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)'
+      } : {
+        border: '1px solid transparent'
+      }}
     >
       <span>{icon}</span>
-      <span>{label}</span>
+      <span className="font-medium">{label}</span>
     </NavLink>
   );
 }
 
 function App(): React.ReactElement {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const location = useLocation();
 
   const closeSidebar = () => setSidebarOpen(false);
 
@@ -52,15 +57,16 @@ function App(): React.ReactElement {
     { to: '/test', label: 'Test Encode', icon: '🧪' },
   ];
 
-  const currentPage = navItems.find(item => item.to === location.pathname)?.label || 'Compressor';
-
   return (
     <div className="h-screen flex overflow-hidden">
       {/* Mobile header */}
-      <div className="fixed top-0 left-0 right-0 z-40 bg-slate-800 border-b border-slate-700 px-4 py-3 flex items-center gap-3 md:hidden">
+      <div
+        className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-b from-neutral-800 to-neutral-800/95 px-4 py-3 flex items-center gap-3 md:hidden backdrop-blur-sm"
+        style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}
+      >
         <button
           onClick={() => setSidebarOpen(true)}
-          className="p-2 text-slate-300 hover:bg-slate-700 rounded-md"
+          className="p-2 text-neutral-300 hover:bg-white/10 rounded-lg transition-colors"
           aria-label="Open menu"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -68,35 +74,38 @@ function App(): React.ReactElement {
           </svg>
         </button>
         <img src="/icon.png" alt="Compressor" className="w-8 h-8" />
-        <span className="text-green-500 font-semibold">{currentPage}</span>
+        <span className="text-white font-semibold">Compressor</span>
       </div>
 
       {/* Backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
           onClick={closeSidebar}
         />
       )}
 
       {/* Sidebar */}
-      <nav className={`
-        fixed md:static inset-y-0 left-0 z-50
-        w-64 bg-slate-800 p-4 flex flex-col
-        transform transition-transform duration-200 ease-in-out
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        md:translate-x-0
-      `}>
+      <nav
+        className={`
+          fixed md:static inset-y-0 left-0 z-50
+          w-64 bg-gradient-to-b from-neutral-800 to-neutral-900 p-4 flex flex-col
+          transform transition-transform duration-200 ease-in-out
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:translate-x-0
+        `}
+        style={{ borderRight: '1px solid rgba(255, 255, 255, 0.06)' }}
+      >
         <div className="mb-8 flex items-center gap-3">
-          <img src="/icon.png" alt="Compressor" className="w-10 h-10" />
+          <img src="/icon.png" alt="Compressor" className="w-10 h-10 drop-shadow-lg" />
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-green-500">Compressor</h1>
-            <p className="text-slate-400 text-xs">HEVC Transcoder</p>
+            <h1 className="text-xl font-bold text-white drop-shadow-sm">Compressor</h1>
+            <p className="text-neutral-500 text-xs">HEVC Transcoder</p>
           </div>
           {/* Close button for mobile */}
           <button
             onClick={closeSidebar}
-            className="p-2 text-slate-400 hover:bg-slate-700 rounded-md md:hidden"
+            className="p-2 text-neutral-400 hover:bg-white/10 hover:text-white rounded-lg transition-all md:hidden"
             aria-label="Close menu"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,8 +126,8 @@ function App(): React.ReactElement {
           ))}
         </div>
 
-        <div className="mt-auto pt-4 border-t border-slate-700">
-          <p className="text-slate-500 text-xs">
+        <div className="mt-auto pt-4" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+          <p className="text-neutral-600 text-xs">
             v{__APP_VERSION__} &middot; Powered by FFmpeg + NVENC
           </p>
         </div>

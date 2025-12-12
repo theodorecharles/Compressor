@@ -128,11 +128,11 @@ export default function Settings(): React.ReactElement {
               type="checkbox"
               checked={scale4kTo1080p}
               onChange={(e) => setScale4kTo1080p(e.target.checked)}
-              className="mt-1 w-5 h-5 rounded border-slate-600 bg-slate-700 text-green-500 focus:ring-green-500"
+              className="mt-1 w-5 h-5 rounded border-neutral-600 bg-neutral-700 text-green-500 focus:ring-green-500"
             />
             <div>
               <span className="font-medium">Scale 4K videos to 1080p</span>
-              <p className="text-slate-400 text-sm mt-1">
+              <p className="text-neutral-400 text-sm mt-1">
                 Automatically downscale 4K (2160p) content to 1080p during encoding.
                 This significantly reduces file sizes while maintaining good quality for most displays.
               </p>
@@ -159,11 +159,11 @@ export default function Settings(): React.ReactElement {
                 step="0.1"
                 className="input w-32"
               />
-              <span className="text-slate-400">
+              <span className="text-neutral-400">
                 ({Math.round(parseFloat(bitrateFactor || '0') * 100)}% of original bitrate)
               </span>
             </div>
-            <p className="text-slate-400 text-sm mt-1">
+            <p className="text-neutral-400 text-sm mt-1">
               Target bitrate as a fraction of the original. HEVC typically achieves similar quality
               at ~50% (0.5) of H.264 bitrates. Lower values = smaller files, potentially lower quality.
             </p>
@@ -183,7 +183,7 @@ export default function Settings(): React.ReactElement {
                 step="0.5"
                 className="input w-full"
               />
-              <p className="text-slate-400 text-sm mt-1">
+              <p className="text-neutral-400 text-sm mt-1">
                 Max bitrate for 1080p content and downscaled 4K.
               </p>
             </div>
@@ -201,7 +201,7 @@ export default function Settings(): React.ReactElement {
                 step="0.5"
                 className="input w-full"
               />
-              <p className="text-slate-400 text-sm mt-1">
+              <p className="text-neutral-400 text-sm mt-1">
                 Max bitrate for 720p and lower resolution content.
               </p>
             </div>
@@ -219,7 +219,7 @@ export default function Settings(): React.ReactElement {
                 step="0.5"
                 className="input w-full"
               />
-              <p className="text-slate-400 text-sm mt-1">
+              <p className="text-neutral-400 text-sm mt-1">
                 Max bitrate for other resolutions (between 720p and 1080p).
               </p>
             </div>
@@ -244,9 +244,9 @@ export default function Settings(): React.ReactElement {
               step="100"
               className="input w-32"
             />
-            <span className="text-slate-400">MB</span>
+            <span className="text-neutral-400">MB</span>
           </div>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-neutral-400 text-sm mt-1">
             Files smaller than this will be skipped during scanning. Set to 0 to process all files.
             Useful for skipping small clips, trailers, or already-compressed content.
           </p>
@@ -272,9 +272,9 @@ export default function Settings(): React.ReactElement {
       </div>
 
       {/* Info Box */}
-      <div className="card bg-slate-800/50 border border-slate-700">
+      <div className="card bg-neutral-800/50 border border-neutral-700">
         <h3 className="font-medium mb-2">About Encoding Settings</h3>
-        <ul className="text-slate-400 text-sm space-y-2">
+        <ul className="text-neutral-400 text-sm space-y-2">
           <li>
             <strong>Bitrate Factor:</strong> The target bitrate is calculated as (original bitrate x factor).
             For example, a 20 Mbps file with factor 0.5 targets 10 Mbps.

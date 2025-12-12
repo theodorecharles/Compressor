@@ -100,7 +100,7 @@ export default function Files(): React.ReactElement {
       <div className="card">
         <div className="flex flex-wrap gap-4">
           <div>
-            <label className="block text-sm text-slate-400 mb-1">Status</label>
+            <label className="block text-sm text-neutral-400 mb-1">Status</label>
             <select
               className="select"
               value={filters.status}
@@ -118,7 +118,7 @@ export default function Files(): React.ReactElement {
           </div>
 
           <div>
-            <label className="block text-sm text-slate-400 mb-1">Library</label>
+            <label className="block text-sm text-neutral-400 mb-1">Library</label>
             <select
               className="select"
               value={filters.library_id}
@@ -132,7 +132,7 @@ export default function Files(): React.ReactElement {
           </div>
 
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm text-slate-400 mb-1">Search</label>
+            <label className="block text-sm text-neutral-400 mb-1">Search</label>
             <input
               type="text"
               className="input w-full"
@@ -145,7 +145,7 @@ export default function Files(): React.ReactElement {
       </div>
 
       {/* Results count */}
-      <div className="text-slate-400">
+      <div className="text-neutral-400">
         Showing {files.length} of {total} files
       </div>
 
@@ -154,7 +154,7 @@ export default function Files(): React.ReactElement {
         {loading ? (
           <div className="text-center py-8">Loading...</div>
         ) : files.length === 0 ? (
-          <div className="text-center py-8 text-slate-400">No files found</div>
+          <div className="text-center py-8 text-neutral-400">No files found</div>
         ) : (
           <table className="table">
             <thead>
@@ -230,7 +230,7 @@ export default function Files(): React.ReactElement {
           >
             Previous
           </button>
-          <span className="text-slate-400">
+          <span className="text-neutral-400">
             Page {currentPage} of {totalPages}
           </span>
           <button
@@ -252,54 +252,54 @@ export default function Files(): React.ReactElement {
         {selectedFile && (
           <div className="space-y-4">
             <div>
-              <label className="text-slate-400 text-sm">Filename</label>
+              <label className="text-neutral-400 text-sm">Filename</label>
               <p className="font-medium break-all">{selectedFile.file_name}</p>
             </div>
             <div>
-              <label className="text-slate-400 text-sm">Full Path</label>
+              <label className="text-neutral-400 text-sm">Full Path</label>
               <p className="font-mono text-sm break-all">{selectedFile.file_path}</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-slate-400 text-sm">Original Codec</label>
+                <label className="text-neutral-400 text-sm">Original Codec</label>
                 <p>{selectedFile.original_codec || '-'}</p>
               </div>
               <div>
-                <label className="text-slate-400 text-sm">Original Bitrate</label>
+                <label className="text-neutral-400 text-sm">Original Bitrate</label>
                 <p>{selectedFile.original_bitrate ? `${(selectedFile.original_bitrate / 1000000).toFixed(2)} Mbps` : '-'}</p>
               </div>
               <div>
-                <label className="text-slate-400 text-sm">Resolution</label>
+                <label className="text-neutral-400 text-sm">Resolution</label>
                 <p>{selectedFile.original_width && selectedFile.original_height
                   ? `${selectedFile.original_width}x${selectedFile.original_height}`
                   : '-'}</p>
               </div>
               <div>
-                <label className="text-slate-400 text-sm">HDR</label>
+                <label className="text-neutral-400 text-sm">HDR</label>
                 <p>{selectedFile.is_hdr ? 'Yes' : 'No'}</p>
               </div>
               <div>
-                <label className="text-slate-400 text-sm">Original Size</label>
+                <label className="text-neutral-400 text-sm">Original Size</label>
                 <p>{formatBytes(selectedFile.original_size)}</p>
               </div>
               <div>
-                <label className="text-slate-400 text-sm">New Size</label>
+                <label className="text-neutral-400 text-sm">New Size</label>
                 <p>{selectedFile.new_size ? formatBytes(selectedFile.new_size) : '-'}</p>
               </div>
             </div>
             <div>
-              <label className="text-slate-400 text-sm">Status</label>
+              <label className="text-neutral-400 text-sm">Status</label>
               <p><StatusBadge status={selectedFile.status} /></p>
             </div>
             {selectedFile.skip_reason && (
               <div>
-                <label className="text-slate-400 text-sm">Skip Reason</label>
+                <label className="text-neutral-400 text-sm">Skip Reason</label>
                 <p>{selectedFile.skip_reason}</p>
               </div>
             )}
             {selectedFile.error_message && (
               <div>
-                <label className="text-slate-400 text-sm">Error</label>
+                <label className="text-neutral-400 text-sm">Error</label>
                 <p className="text-red-400">{selectedFile.error_message}</p>
               </div>
             )}

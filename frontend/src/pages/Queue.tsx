@@ -153,7 +153,7 @@ export default function Queue(): React.ReactElement {
                     : 'Running'
                   : 'Stopped'}
               </p>
-              <p className="text-slate-400 text-sm">
+              <p className="text-neutral-400 text-sm">
                 {total} files in queue
               </p>
             </div>
@@ -165,7 +165,7 @@ export default function Queue(): React.ReactElement {
           <h3 className="font-medium mb-3">Queue Order</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-slate-400 text-sm block mb-1">File Sort</label>
+              <label className="text-neutral-400 text-sm block mb-1">File Sort</label>
               <select
                 value={settings?.sort_order || 'bitrate_desc'}
                 onChange={(e) => handleSettingChange('sort_order', e.target.value)}
@@ -187,7 +187,7 @@ export default function Queue(): React.ReactElement {
               </select>
             </div>
             <div>
-              <label className="text-slate-400 text-sm block mb-1">Library Priority</label>
+              <label className="text-neutral-400 text-sm block mb-1">Library Priority</label>
               <select
                 value={settings?.library_priority || 'alphabetical_asc'}
                 onChange={(e) => handleSettingChange('library_priority', e.target.value)}
@@ -218,37 +218,49 @@ export default function Queue(): React.ReactElement {
           <div className="space-y-4">
             <div>
               <p className="text-lg font-medium truncate">{currentEncoding.file.file_name}</p>
-              <p className="text-slate-400 text-sm truncate">{currentEncoding.file.file_path}</p>
+              <p className="text-neutral-400 text-sm truncate">{currentEncoding.file.file_path}</p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
-                <span className="text-slate-400">Codec:</span>{' '}
+                <span className="text-neutral-400">Codec:</span>{' '}
                 {currentEncoding.file.original_codec || '-'}
               </div>
               <div>
-                <span className="text-slate-400">Size:</span>{' '}
+                <span className="text-neutral-400">Size:</span>{' '}
                 {formatBytes(currentEncoding.file.original_size)}
               </div>
               <div>
-                <span className="text-slate-400">Resolution:</span>{' '}
+                <span className="text-neutral-400">Resolution:</span>{' '}
                 {currentEncoding.file.original_width}x{currentEncoding.file.original_height}
               </div>
               <div>
-                <span className="text-slate-400">HDR:</span>{' '}
+                <span className="text-neutral-400">HDR:</span>{' '}
                 {currentEncoding.file.is_hdr ? 'Yes' : 'No'}
               </div>
             </div>
 
             <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span>Progress</span>
-                <span>{formatPercent(currentEncoding.progress)}</span>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-neutral-400">Progress</span>
+                <span className="font-medium text-white">{formatPercent(currentEncoding.progress)}</span>
               </div>
-              <div className="w-full bg-slate-700 rounded-full h-4">
+              <div
+                className="w-full h-4 rounded-full overflow-hidden"
+                style={{
+                  background: 'rgba(0, 0, 0, 0.3)',
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4)'
+                }}
+              >
                 <div
-                  className="bg-yellow-500 h-4 rounded-full transition-all duration-500 flex items-center justify-center text-xs font-medium"
-                  style={{ width: `${Math.max(currentEncoding.progress, 5)}%` }}
+                  className="h-full rounded-full transition-all duration-500 flex items-center justify-center text-xs font-medium"
+                  style={{
+                    width: `${Math.max(currentEncoding.progress, 5)}%`,
+                    background: 'linear-gradient(to bottom, #facc15, #eab308)',
+                    boxShadow: '0 0 12px rgba(234, 179, 8, 0.4)',
+                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
+                  }}
                 >
                   {currentEncoding.progress > 10 ? formatPercent(currentEncoding.progress) : ''}
                 </div>
@@ -260,7 +272,7 @@ export default function Queue(): React.ReactElement {
 
       {!currentEncoding?.encoding && !queueStatus?.isPaused && queue.length > 0 && (
         <div className="card border-l-4 border-blue-500">
-          <p className="text-slate-300">
+          <p className="text-neutral-300">
             Waiting to start next file...
           </p>
         </div>
@@ -268,7 +280,7 @@ export default function Queue(): React.ReactElement {
 
       {!currentEncoding?.encoding && queueStatus?.isPaused && (
         <div className="card border-l-4 border-yellow-500">
-          <p className="text-slate-300">
+          <p className="text-neutral-300">
             Queue is paused. Click "Resume Queue" to continue encoding.
           </p>
         </div>
@@ -281,7 +293,7 @@ export default function Queue(): React.ReactElement {
         </h2>
 
         {total === 0 ? (
-          <div className="text-center py-8 text-slate-400">
+          <div className="text-center py-8 text-neutral-400">
             <p>Queue is empty!</p>
             <p className="text-sm mt-2">Add libraries and scan for files to start encoding.</p>
           </div>
@@ -301,7 +313,7 @@ export default function Queue(): React.ReactElement {
               <tbody>
                 {queue.map((file, index) => (
                   <tr key={file.id}>
-                    <td className="text-slate-400">{pagination.offset + index + 1}</td>
+                    <td className="text-neutral-400">{pagination.offset + index + 1}</td>
                     <td className="max-w-xs">
                       <button
                         onClick={() => setSelectedFile(file)}
@@ -336,7 +348,7 @@ export default function Queue(): React.ReactElement {
           >
             Previous
           </button>
-          <span className="text-slate-400">
+          <span className="text-neutral-400">
             Page {currentPage} of {totalPages}
           </span>
           <button
@@ -358,54 +370,54 @@ export default function Queue(): React.ReactElement {
         {selectedFile && (
           <div className="space-y-4">
             <div>
-              <label className="text-slate-400 text-sm">Filename</label>
+              <label className="text-neutral-400 text-sm">Filename</label>
               <p className="font-medium break-all">{selectedFile.file_name}</p>
             </div>
             <div>
-              <label className="text-slate-400 text-sm">Full Path</label>
+              <label className="text-neutral-400 text-sm">Full Path</label>
               <p className="font-mono text-sm break-all">{selectedFile.file_path}</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-slate-400 text-sm">Original Codec</label>
+                <label className="text-neutral-400 text-sm">Original Codec</label>
                 <p>{selectedFile.original_codec || '-'}</p>
               </div>
               <div>
-                <label className="text-slate-400 text-sm">Original Bitrate</label>
+                <label className="text-neutral-400 text-sm">Original Bitrate</label>
                 <p>{selectedFile.original_bitrate ? `${(selectedFile.original_bitrate / 1000000).toFixed(2)} Mbps` : '-'}</p>
               </div>
               <div>
-                <label className="text-slate-400 text-sm">Resolution</label>
+                <label className="text-neutral-400 text-sm">Resolution</label>
                 <p>{selectedFile.original_width && selectedFile.original_height
                   ? `${selectedFile.original_width}x${selectedFile.original_height}`
                   : '-'}</p>
               </div>
               <div>
-                <label className="text-slate-400 text-sm">HDR</label>
+                <label className="text-neutral-400 text-sm">HDR</label>
                 <p>{selectedFile.is_hdr ? 'Yes' : 'No'}</p>
               </div>
               <div>
-                <label className="text-slate-400 text-sm">Original Size</label>
+                <label className="text-neutral-400 text-sm">Original Size</label>
                 <p>{formatBytes(selectedFile.original_size)}</p>
               </div>
               <div>
-                <label className="text-slate-400 text-sm">Library</label>
+                <label className="text-neutral-400 text-sm">Library</label>
                 <p>{selectedFile.library_name}</p>
               </div>
             </div>
             <div>
-              <label className="text-slate-400 text-sm">Status</label>
+              <label className="text-neutral-400 text-sm">Status</label>
               <p><StatusBadge status={selectedFile.status} /></p>
             </div>
             {selectedFile.skip_reason && (
               <div>
-                <label className="text-slate-400 text-sm">Skip Reason</label>
+                <label className="text-neutral-400 text-sm">Skip Reason</label>
                 <p>{selectedFile.skip_reason}</p>
               </div>
             )}
             {selectedFile.error_message && (
               <div>
-                <label className="text-slate-400 text-sm">Error</label>
+                <label className="text-neutral-400 text-sm">Error</label>
                 <p className="text-red-400 font-mono text-sm whitespace-pre-wrap">{selectedFile.error_message}</p>
               </div>
             )}

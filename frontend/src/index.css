@@ -3,89 +3,247 @@
 @tailwind utilities;
 
 body {
-  @apply bg-slate-900 text-slate-100;
+  @apply bg-neutral-900 text-neutral-100;
 }
 
+/* Cards with glossy highlight border */
 .card {
-  @apply bg-slate-800 rounded-lg p-6 shadow-lg;
+  @apply bg-gradient-to-b from-neutral-800 to-neutral-800/90 rounded-xl p-6 shadow-xl;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top-color: rgba(255, 255, 255, 0.12);
+  transition: all 0.2s ease;
 }
 
+.card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  border-top-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+/* Buttons */
 .btn {
-  @apply px-4 py-2 rounded-md font-medium transition-colors duration-200;
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .btn-primary {
-  @apply bg-green-600 hover:bg-green-700 text-white;
+  @apply bg-gradient-to-b from-green-500 to-green-600 text-white shadow-lg;
+  border-color: rgba(255, 255, 255, 0.15);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary:hover {
+  @apply from-green-400 to-green-500 shadow-xl;
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
-  @apply bg-slate-600 hover:bg-slate-700 text-white;
+  @apply bg-gradient-to-b from-neutral-600 to-neutral-700 text-white shadow-md;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.btn-secondary:hover {
+  @apply from-neutral-500 to-neutral-600 shadow-lg;
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
 .btn-danger {
-  @apply bg-red-600 hover:bg-red-700 text-white;
+  @apply bg-gradient-to-b from-red-500 to-red-600 text-white shadow-lg;
+  border-color: rgba(255, 255, 255, 0.15);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.btn-danger:hover {
+  @apply from-red-400 to-red-500 shadow-xl;
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
 }
 
 .btn-warning {
-  @apply bg-yellow-600 hover:bg-yellow-700 text-white;
+  @apply bg-gradient-to-b from-yellow-500 to-yellow-600 text-white shadow-lg;
+  border-color: rgba(255, 255, 255, 0.15);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
+.btn-warning:hover {
+  @apply from-yellow-400 to-yellow-500 shadow-xl;
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Inputs */
 .input {
-  @apply bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent;
+  @apply bg-neutral-900/80 rounded-lg px-3 py-2 text-white placeholder-neutral-500 shadow-inner transition-all;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.input:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.input:focus {
+  @apply outline-none ring-2 ring-green-500/40;
+  border-color: rgba(34, 197, 94, 0.5);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 12px rgba(34, 197, 94, 0.15);
 }
 
 .select {
-  @apply bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent;
+  @apply bg-neutral-900/80 rounded-lg px-3 py-2 text-white shadow-inner transition-all cursor-pointer;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.select:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.select:focus {
+  @apply outline-none ring-2 ring-green-500/40;
+  border-color: rgba(34, 197, 94, 0.5);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 12px rgba(34, 197, 94, 0.15);
+}
+
+/* Badges with glossy effect */
 .badge {
-  @apply px-2 py-1 rounded-full text-xs font-medium;
+  @apply px-2.5 py-1 rounded-full text-xs font-semibold shadow-md;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .badge-queued {
-  @apply bg-blue-600 text-white;
+  @apply bg-gradient-to-b from-blue-500 to-blue-600 text-white;
 }
 
 .badge-encoding {
-  @apply bg-yellow-600 text-white;
+  @apply bg-gradient-to-b from-yellow-500 to-yellow-600 text-white;
 }
 
 .badge-finished {
-  @apply bg-green-600 text-white;
+  @apply bg-gradient-to-b from-green-500 to-green-600 text-white;
 }
 
 .badge-skipped {
-  @apply bg-slate-600 text-white;
+  @apply bg-gradient-to-b from-neutral-500 to-neutral-600 text-white;
 }
 
 .badge-excluded {
-  @apply bg-purple-600 text-white;
+  @apply bg-gradient-to-b from-purple-500 to-purple-600 text-white;
 }
 
 .badge-errored {
-  @apply bg-red-600 text-white;
+  @apply bg-gradient-to-b from-red-500 to-red-600 text-white;
 }
 
 .badge-rejected {
-  @apply bg-orange-600 text-white;
+  @apply bg-gradient-to-b from-orange-500 to-orange-600 text-white;
 }
 
 .badge-cancelled {
-  @apply bg-gray-500 text-white;
+  @apply bg-gradient-to-b from-neutral-400 to-neutral-500 text-white;
 }
 
+/* Tables */
 .table {
   @apply w-full;
 }
 
 .table th {
-  @apply text-left px-4 py-3 text-slate-400 font-medium text-sm uppercase tracking-wider border-b border-slate-700;
+  @apply text-left px-4 py-3 text-neutral-400 font-medium text-sm uppercase tracking-wider;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), transparent);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .table td {
-  @apply px-4 py-3 border-b border-slate-700;
+  @apply px-4 py-3;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.table tr:hover {
-  @apply bg-slate-700/50;
+.table tbody tr {
+  @apply transition-all duration-150;
+}
+
+.table tbody tr:hover {
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.03));
+}
+
+/* Progress bars */
+.progress-bar {
+  @apply rounded-full overflow-hidden;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.progress-bar-fill {
+  @apply h-full rounded-full transition-all duration-500;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.15), transparent);
+}
+
+/* Stat cards special styling */
+.stat-card {
+  @apply relative overflow-hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
+}
+
+/* Toggle switches */
+.toggle-switch {
+  @apply relative rounded-full transition-all duration-200;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.toggle-switch:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Modal backdrop blur */
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Glow effects for status indicators */
+.glow-green {
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
+}
+
+.glow-yellow {
+  box-shadow: 0 0 12px rgba(234, 179, 8, 0.4);
+}
+
+.glow-red {
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+}
+
+.glow-blue {
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
 }
