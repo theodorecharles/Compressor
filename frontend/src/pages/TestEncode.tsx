@@ -79,7 +79,7 @@ export default function TestEncode(): React.ReactElement {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold gradient-text">Test Encode</h1>
+      <h1 className="text-2xl font-bold">Test Encode</h1>
 
       <div className="card">
         <h2 className="text-lg font-semibold mb-4">About Test Encoding</h2>

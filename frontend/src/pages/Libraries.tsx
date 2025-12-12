@@ -14,9 +14,15 @@ function ToggleSwitch({ checked, onChange }: ToggleSwitchProps): React.ReactElem
   return (
     <button
       onClick={onChange}
-      className={`toggle-track ${checked ? 'active' : ''}`}
+      className={`relative w-10 h-5 rounded-full transition-colors ${
+        checked ? 'bg-green-600' : 'bg-neutral-600'
+      }`}
     >
-      <span className="toggle-thumb" />
+      <span
+        className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${
+          checked ? 'tranneutral-x-5' : ''
+        }`}
+      />
     </button>
   );
 }
@@ -148,7 +154,7 @@ export default function Libraries(): React.ReactElement {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold gradient-text">Libraries</h1>
+        <h1 className="text-2xl font-bold">Libraries</h1>
         <button onClick={openAddModal} className="btn btn-primary">
           Add Library
         </button>
@@ -191,15 +197,27 @@ export default function Libraries(): React.ReactElement {
                 {/* Progress bar */}
                 <div>
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="text-neutral-400 font-medium">Progress</span>
-                    <span className="font-bold text-blue-400 neon-blue">{scanStatus.processedFiles.toLocaleString()} / {scanStatus.totalFiles.toLocaleString()} files</span>
+                    <span className="text-neutral-400">Progress</span>
+                    <span className="font-medium text-white">{scanStatus.processedFiles.toLocaleString()} / {scanStatus.totalFiles.toLocaleString()} files</span>
                   </div>
-                  <div className="progress-container h-5">
+                  <div
+                    className="w-full h-4 rounded-full overflow-hidden"
+                    style={{
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4)'
+                    }}
+                  >
                     <div
-                      className="progress-bar-blue flex items-center justify-center text-xs font-bold"
-                      style={{ width: `${scanStatus.totalFiles > 0 ? Math.max((scanStatus.processedFiles / scanStatus.totalFiles) * 100, 2) : 0}%` }}
+                      className="h-full rounded-full transition-all duration-500 flex items-center justify-center text-xs font-medium"
+                      style={{
+                        width: `${scanStatus.totalFiles > 0 ? Math.max((scanStatus.processedFiles / scanStatus.totalFiles) * 100, 1) : 0}%`,
+                        background: 'linear-gradient(to bottom, #3b82f6, #2563eb)',
+                        boxShadow: '0 0 12px rgba(59, 130, 246, 0.4)',
+                        textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
+                      }}
                     >
-                      {scanStatus.totalFiles > 0 && (scanStatus.processedFiles / scanStatus.totalFiles) > 0.15 ? formatPercent((scanStatus.processedFiles / scanStatus.totalFiles) * 100) : ''}
+                      {scanStatus.totalFiles > 0 ? formatPercent((scanStatus.processedFiles / scanStatus.totalFiles) * 100) : '0%'}
                     </div>
                   </div>
                 </div>

@@ -94,7 +94,7 @@ export default function Files(): React.ReactElement {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold gradient-text">Files</h1>
+      <h1 className="text-2xl font-bold">Files</h1>
 
       {/* Filters */}
       <div className="card">

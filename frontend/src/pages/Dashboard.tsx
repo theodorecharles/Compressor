@@ -32,14 +32,14 @@ interface StatCardProps {
 
 function StatCard({ label, value, icon, color = 'text-white', subtitle, small }: StatCardProps): React.ReactElement {
   return (
-    <div className={`card shine ${small ? 'p-4' : ''}`}>
+    <div className={`card ${small ? 'p-4' : ''}`}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-neutral-400 text-sm font-medium tracking-wide uppercase">{label}</p>
-          <p className={`${small ? 'text-2xl' : 'text-3xl'} font-bold ${color}`} style={{ textShadow: color.includes('green') ? '0 0 20px rgba(34, 197, 94, 0.5)' : color.includes('blue') ? '0 0 20px rgba(59, 130, 246, 0.5)' : color.includes('red') ? '0 0 20px rgba(239, 68, 68, 0.5)' : 'none' }}>{value}</p>
-          {subtitle && <p className="text-neutral-500 text-xs mt-1">{subtitle}</p>}
+          <p className="text-neutral-400 text-sm">{label}</p>
+          <p className={`${small ? 'text-xl' : 'text-2xl'} font-bold ${color}`}>{value}</p>
+          {subtitle && <p className="text-neutral-400 text-xs mt-1">{subtitle}</p>}
         </div>
-        <span className={`${small ? 'text-2xl' : 'text-4xl'}`} style={{ filter: 'drop-shadow(0 0 8px currentColor)' }}>{icon}</span>
+        <span className={`${small ? 'text-xl' : 'text-3xl'}`}>{icon}</span>
       </div>
     </div>
   );
@@ -96,7 +96,7 @@ export default function Dashboard(): React.ReactElement {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold gradient-text">Dashboard</h1>
+      <h1 className="text-2xl font-bold">Dashboard</h1>
 
       {/* Health Status */}
       {health && (
@@ -138,15 +138,26 @@ export default function Dashboard(): React.ReactElement {
             </button>
           </div>
           <p className="text-neutral-300 truncate">{currentEncoding.file.file_name}</p>
-          <div className="mt-4">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-neutral-400 font-medium">Progress</span>
-              <span className="font-bold text-yellow-400 neon-yellow">{formatPercent(currentEncoding.progress)}</span>
+          <div className="mt-3">
+            <div className="flex justify-between text-sm text-neutral-400 mb-2">
+              <span>Progress</span>
+              <span className="font-medium text-white">{formatPercent(currentEncoding.progress)}</span>
             </div>
-            <div className="progress-container">
+            <div
+              className="w-full h-3 rounded-full overflow-hidden"
+              style={{
+                background: 'rgba(0, 0, 0, 0.3)',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4)'
+              }}
+            >
               <div
-                className="progress-bar-yellow"
-                style={{ width: `${Math.max(currentEncoding.progress, 2)}%` }}
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${currentEncoding.progress}%`,
+                  background: 'linear-gradient(to bottom, #facc15, #eab308)',
+                  boxShadow: '0 0 12px rgba(234, 179, 8, 0.4)'
+                }}
               />
             </div>
           </div>
@@ -155,7 +166,7 @@ export default function Dashboard(): React.ReactElement {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             label="Total Files"
             value={stats.total_files}
@@ -185,7 +196,7 @@ export default function Dashboard(): React.ReactElement {
 
       {/* Stats Row 2 */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard
             label="Skipped"
             value={stats.skipped}

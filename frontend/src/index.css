@@ -2,863 +2,248 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ========================================
-   ANIMATIONS
-   ======================================== */
-
-@keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-@keyframes pulse-glow {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
-}
-
-@keyframes border-dance {
-  0%, 100% { background-position: 0% 0%; }
-  50% { background-position: 100% 100%; }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-4px); }
-}
-
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes breathe {
-  0%, 100% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
-  50% { box-shadow: 0 0 40px rgba(34, 197, 94, 0.6); }
-}
-
-@keyframes neon-flicker {
-  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
-  20%, 24%, 55% { opacity: 0.8; }
-}
-
-@keyframes rainbow {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-@keyframes scan-line {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
-}
-
-@keyframes glow-pulse {
-  0%, 100% {
-    box-shadow: 0 0 20px currentColor, 0 0 40px currentColor, 0 0 60px currentColor;
-  }
-  50% {
-    box-shadow: 0 0 30px currentColor, 0 0 60px currentColor, 0 0 90px currentColor;
-  }
-}
-
-@keyframes border-glow {
-  0%, 100% { border-color: rgba(34, 197, 94, 0.5); }
-  33% { border-color: rgba(59, 130, 246, 0.5); }
-  66% { border-color: rgba(168, 85, 247, 0.5); }
-}
-
-@keyframes scale-in {
-  0% { transform: scale(0.95); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-@keyframes slide-up {
-  0% { transform: translateY(10px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
-}
-
-/* ========================================
-   BASE STYLES
-   ======================================== */
-
 body {
-  @apply bg-neutral-950 text-neutral-100;
-  background-image:
-    radial-gradient(ellipse at top, rgba(34, 197, 94, 0.03) 0%, transparent 50%),
-    radial-gradient(ellipse at bottom right, rgba(59, 130, 246, 0.03) 0%, transparent 50%);
-  background-attachment: fixed;
+  @apply bg-neutral-900 text-neutral-100;
 }
 
-/* ========================================
-   CARDS - Glassmorphism with animated borders
-   ======================================== */
-
+/* Cards with glossy highlight border */
 .card {
-  @apply relative rounded-2xl p-6 overflow-hidden;
-  background: linear-gradient(135deg, rgba(38, 38, 38, 0.8) 0%, rgba(23, 23, 23, 0.9) 100%);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid transparent;
-  background-clip: padding-box;
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.1));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
+  @apply bg-gradient-to-b from-neutral-800 to-neutral-800/90 rounded-xl p-6 shadow-xl;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top-color: rgba(255, 255, 255, 0.12);
+  transition: all 0.2s ease;
 }
 
 .card:hover {
-  transform: translateY(-4px) scale(1.01);
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.5),
-    0 0 40px rgba(34, 197, 94, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.15);
+  border-top-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
 }
 
-.card:hover::before {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.4), rgba(255, 255, 255, 0.1), rgba(59, 130, 246, 0.3));
-}
-
-/* ========================================
-   BUTTONS - Neon glow with shimmer
-   ======================================== */
-
+/* Buttons */
 .btn {
-  @apply relative px-5 py-2.5 rounded-xl font-semibold overflow-hidden;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transform: translateX(-100%);
-  transition: transform 0.6s;
-}
-
-.btn:hover::before {
-  transform: translateX(100%);
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%);
-  background-size: 200% 200%;
-  animation: gradient-shift 3s ease infinite;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow:
-    0 4px 15px rgba(34, 197, 94, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  color: white;
+  @apply bg-gradient-to-b from-green-500 to-green-600 text-white shadow-lg;
+  border-color: rgba(255, 255, 255, 0.15);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow:
-    0 8px 30px rgba(34, 197, 94, 0.6),
-    0 0 60px rgba(34, 197, 94, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-}
-
-.btn-primary:active {
-  transform: translateY(0) scale(0.98);
+  @apply from-green-400 to-green-500 shadow-xl;
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background: linear-gradient(135deg, rgba(64, 64, 64, 0.9) 0%, rgba(38, 38, 38, 0.9) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow:
-    0 4px 15px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  color: white;
+  @apply bg-gradient-to-b from-neutral-600 to-neutral-700 text-white shadow-md;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .btn-secondary:hover {
-  transform: translateY(-2px);
+  @apply from-neutral-500 to-neutral-600 shadow-lg;
   border-color: rgba(255, 255, 255, 0.2);
-  box-shadow:
-    0 8px 25px rgba(0, 0, 0, 0.4),
-    0 0 30px rgba(255, 255, 255, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
-  background-size: 200% 200%;
-  animation: gradient-shift 3s ease infinite;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow:
-    0 4px 15px rgba(239, 68, 68, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  color: white;
+  @apply bg-gradient-to-b from-red-500 to-red-600 text-white shadow-lg;
+  border-color: rgba(255, 255, 255, 0.15);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .btn-danger:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow:
-    0 8px 30px rgba(239, 68, 68, 0.6),
-    0 0 60px rgba(239, 68, 68, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  @apply from-red-400 to-red-500 shadow-xl;
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
 }
 
 .btn-warning {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
-  background-size: 200% 200%;
-  animation: gradient-shift 3s ease infinite;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow:
-    0 4px 15px rgba(245, 158, 11, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  color: white;
+  @apply bg-gradient-to-b from-yellow-500 to-yellow-600 text-white shadow-lg;
+  border-color: rgba(255, 255, 255, 0.15);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .btn-warning:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow:
-    0 8px 30px rgba(245, 158, 11, 0.6),
-    0 0 60px rgba(245, 158, 11, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  @apply from-yellow-400 to-yellow-500 shadow-xl;
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
 }
 
-/* ========================================
-   INPUTS - Glowing focus states
-   ======================================== */
-
-.input, .select {
-  @apply bg-neutral-900/80 rounded-xl px-4 py-3 text-white placeholder-neutral-500;
+/* Inputs */
+.input {
+  @apply bg-neutral-900/80 rounded-lg px-3 py-2 text-white placeholder-neutral-500 shadow-inner transition-all;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
 }
 
-.input:hover, .select:hover {
+.input:hover {
   border-color: rgba(255, 255, 255, 0.15);
-  box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.3),
-    0 0 20px rgba(255, 255, 255, 0.03);
 }
 
-.input:focus, .select:focus {
-  @apply outline-none;
+.input:focus {
+  @apply outline-none ring-2 ring-green-500/40;
   border-color: rgba(34, 197, 94, 0.5);
-  box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.3),
-    0 0 30px rgba(34, 197, 94, 0.2),
-    0 0 60px rgba(34, 197, 94, 0.1);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 12px rgba(34, 197, 94, 0.15);
 }
 
-/* ========================================
-   BADGES - Gradient with glow
-   ======================================== */
+.select {
+  @apply bg-neutral-900/80 rounded-lg px-3 py-2 text-white shadow-inner transition-all cursor-pointer;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
 
+.select:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.select:focus {
+  @apply outline-none ring-2 ring-green-500/40;
+  border-color: rgba(34, 197, 94, 0.5);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 12px rgba(34, 197, 94, 0.15);
+}
+
+/* Badges with glossy effect */
 .badge {
-  @apply relative px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider overflow-hidden;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.badge::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.15), transparent);
-  pointer-events: none;
+  @apply px-2.5 py-1 rounded-full text-xs font-semibold shadow-md;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .badge-queued {
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-  color: white;
+  @apply bg-gradient-to-b from-blue-500 to-blue-600 text-white;
 }
 
 .badge-encoding {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
-  animation: pulse-glow 2s ease-in-out infinite;
-  color: white;
+  @apply bg-gradient-to-b from-yellow-500 to-yellow-600 text-white;
 }
 
 .badge-finished {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
-  color: white;
+  @apply bg-gradient-to-b from-green-500 to-green-600 text-white;
 }
 
 .badge-skipped {
-  background: linear-gradient(135deg, #525252, #404040);
-  box-shadow: 0 0 15px rgba(82, 82, 82, 0.3);
-  color: white;
+  @apply bg-gradient-to-b from-neutral-500 to-neutral-600 text-white;
 }
 
 .badge-excluded {
-  background: linear-gradient(135deg, #a855f7, #7c3aed);
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
-  color: white;
+  @apply bg-gradient-to-b from-purple-500 to-purple-600 text-white;
 }
 
 .badge-errored {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
-  animation: pulse-glow 1.5s ease-in-out infinite;
-  color: white;
+  @apply bg-gradient-to-b from-red-500 to-red-600 text-white;
 }
 
 .badge-rejected {
-  background: linear-gradient(135deg, #f97316, #ea580c);
-  box-shadow: 0 0 20px rgba(249, 115, 22, 0.5);
-  color: white;
+  @apply bg-gradient-to-b from-orange-500 to-orange-600 text-white;
 }
 
 .badge-cancelled {
-  background: linear-gradient(135deg, #71717a, #52525b);
-  box-shadow: 0 0 15px rgba(113, 113, 122, 0.3);
-  color: white;
+  @apply bg-gradient-to-b from-neutral-400 to-neutral-500 text-white;
 }
 
-/* ========================================
-   TABLES - Sleek with row highlights
-   ======================================== */
-
+/* Tables */
 .table {
   @apply w-full;
-  border-collapse: separate;
-  border-spacing: 0;
 }
 
 .table th {
-  @apply text-left px-4 py-4 text-neutral-400 font-semibold text-xs uppercase tracking-widest;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), transparent);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  @apply text-left px-4 py-3 text-neutral-400 font-medium text-sm uppercase tracking-wider;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), transparent);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .table td {
-  @apply px-4 py-4;
+  @apply px-4 py-3;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .table tbody tr {
-  @apply transition-all duration-300;
+  @apply transition-all duration-150;
 }
 
 .table tbody tr:hover {
-  background: linear-gradient(90deg,
-    rgba(34, 197, 94, 0.05) 0%,
-    rgba(34, 197, 94, 0.1) 50%,
-    rgba(34, 197, 94, 0.05) 100%);
-  transform: scale(1.005);
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.03));
 }
 
-.table tbody tr:hover td {
-  border-bottom-color: rgba(34, 197, 94, 0.2);
-}
-
-/* ========================================
-   PROGRESS BARS - Animated shimmer
-   ======================================== */
-
-.progress-container {
-  @apply relative w-full h-4 rounded-full overflow-hidden;
-  background: rgba(0, 0, 0, 0.4);
+/* Progress bars */
+.progress-bar {
+  @apply rounded-full overflow-hidden;
+  background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
-}
-
-.progress-bar-yellow {
-  @apply h-full rounded-full relative overflow-hidden;
-  background: linear-gradient(90deg, #f59e0b, #fbbf24, #f59e0b);
-  background-size: 200% 100%;
-  animation: gradient-shift 2s linear infinite;
-  box-shadow: 0 0 30px rgba(245, 158, 11, 0.6);
-}
-
-.progress-bar-yellow::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  animation: shimmer 1.5s infinite;
-}
-
-.progress-bar-blue {
-  @apply h-full rounded-full relative overflow-hidden;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa, #3b82f6);
-  background-size: 200% 100%;
-  animation: gradient-shift 2s linear infinite;
-  box-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
-}
-
-.progress-bar-blue::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  animation: shimmer 1.5s infinite;
-}
-
-.progress-bar-green {
-  @apply h-full rounded-full relative overflow-hidden;
-  background: linear-gradient(90deg, #22c55e, #4ade80, #22c55e);
-  background-size: 200% 100%;
-  animation: gradient-shift 2s linear infinite;
-  box-shadow: 0 0 30px rgba(34, 197, 94, 0.6);
-}
-
-.progress-bar-green::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  animation: shimmer 1.5s infinite;
-}
-
-/* ========================================
-   STATUS INDICATORS - Pulsing dots
-   ======================================== */
-
-.status-dot {
-  @apply relative rounded-full;
-}
-
-.status-dot::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: inherit;
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-.status-dot-green {
-  @apply bg-green-500;
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.8);
-}
-
-.status-dot-green::after {
-  background: rgba(34, 197, 94, 0.4);
-}
-
-.status-dot-yellow {
-  @apply bg-yellow-500;
-  box-shadow: 0 0 20px rgba(234, 179, 8, 0.8);
-}
-
-.status-dot-yellow::after {
-  background: rgba(234, 179, 8, 0.4);
-}
-
-.status-dot-red {
-  @apply bg-red-500;
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
-}
-
-.status-dot-red::after {
-  background: rgba(239, 68, 68, 0.4);
-}
-
-/* ========================================
-   SIDEBAR NAV - Gradient active states
-   ======================================== */
-
-.nav-item-active {
-  background: linear-gradient(90deg, rgba(34, 197, 94, 0.9), rgba(22, 163, 74, 0.9));
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow:
-    0 4px 20px rgba(34, 197, 94, 0.4),
-    0 0 40px rgba(34, 197, 94, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-
-/* ========================================
-   TOGGLE SWITCHES - Fancy animated
-   ======================================== */
-
-.toggle-track {
-  @apply relative w-12 h-6 rounded-full transition-all duration-300;
-  background: linear-gradient(135deg, #27272a, #18181b);
-  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
-.toggle-track.active {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.2),
-    0 0 20px rgba(34, 197, 94, 0.4);
+.progress-bar-fill {
+  @apply h-full rounded-full transition-all duration-500;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.15), transparent);
 }
 
-.toggle-thumb {
-  @apply absolute top-0.5 w-5 h-5 rounded-full transition-all duration-300;
-  background: linear-gradient(135deg, #fff, #e5e5e5);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  left: 2px;
+/* Stat cards special styling */
+.stat-card {
+  @apply relative overflow-hidden;
 }
 
-.toggle-track.active .toggle-thumb {
-  transform: translateX(24px);
-  box-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.3),
-    0 0 10px rgba(255, 255, 255, 0.3);
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
 }
 
-/* ========================================
-   SCROLLBAR - Sleek gradient
-   ======================================== */
+/* Toggle switches */
+.toggle-switch {
+  @apply relative rounded-full transition-all duration-200;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
 
+.toggle-switch:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Modal backdrop blur */
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+}
+
+/* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
-  border-radius: 5px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(34, 197, 94, 0.5), rgba(34, 197, 94, 0.3));
-  background-clip: padding-box;
+  background: rgba(255, 255, 255, 0.25);
 }
 
-/* ========================================
-   SPECIAL EFFECTS
-   ======================================== */
-
-/* Gradient text */
-.gradient-text {
-  background: linear-gradient(135deg, #22c55e 0%, #3b82f6 50%, #a855f7 100%);
-  background-size: 200% 200%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: rainbow 5s ease infinite;
-  filter: drop-shadow(0 0 10px rgba(34, 197, 94, 0.3));
+/* Glow effects for status indicators */
+.glow-green {
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
 }
 
-/* Rainbow gradient text */
-.rainbow-text {
-  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3, #ff0000);
-  background-size: 300% 100%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: rainbow 3s linear infinite;
+.glow-yellow {
+  box-shadow: 0 0 12px rgba(234, 179, 8, 0.4);
 }
 
-/* Neon glow classes */
-.neon-green {
-  text-shadow:
-    0 0 10px rgba(34, 197, 94, 0.8),
-    0 0 20px rgba(34, 197, 94, 0.6),
-    0 0 30px rgba(34, 197, 94, 0.4);
+.glow-red {
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
 }
 
-.neon-blue {
-  text-shadow:
-    0 0 10px rgba(59, 130, 246, 0.8),
-    0 0 20px rgba(59, 130, 246, 0.6),
-    0 0 30px rgba(59, 130, 246, 0.4);
-}
-
-.neon-yellow {
-  text-shadow:
-    0 0 10px rgba(234, 179, 8, 0.8),
-    0 0 20px rgba(234, 179, 8, 0.6),
-    0 0 30px rgba(234, 179, 8, 0.4);
-}
-
-.neon-red {
-  text-shadow:
-    0 0 10px rgba(239, 68, 68, 0.8),
-    0 0 20px rgba(239, 68, 68, 0.6),
-    0 0 30px rgba(239, 68, 68, 0.4);
-}
-
-/* Floating animation */
-.float {
-  animation: float 3s ease-in-out infinite;
-}
-
-/* Glass effect */
-.glass {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Animated border */
-.animated-border {
-  position: relative;
-}
-
-.animated-border::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: inherit;
-  background: linear-gradient(45deg, #22c55e, #3b82f6, #a855f7, #22c55e);
-  background-size: 400% 400%;
-  animation: border-dance 8s ease infinite;
-  z-index: -1;
-}
-
-.animated-border::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: inherit;
-  z-index: -1;
-}
-
-/* Shine effect on hover */
-.shine {
-  position: relative;
-  overflow: hidden;
-}
-
-.shine::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    to bottom right,
-    rgba(255, 255, 255, 0) 40%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(255, 255, 255, 0) 60%
-  );
-  transform: rotate(45deg);
-  transition: transform 0.6s;
-}
-
-.shine:hover::after {
-  transform: rotate(45deg) translate(100%, 100%);
-}
-
-/* Stat card with icon glow */
-.stat-icon {
-  @apply text-4xl;
-  filter: drop-shadow(0 0 10px currentColor);
-}
-
-/* Encoding pulse */
-.encoding-pulse {
-  animation: breathe 2s ease-in-out infinite;
-}
-
-/* Code/mono text styling */
-code {
-  @apply px-2 py-1 rounded-lg text-sm font-mono;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #4ade80;
-}
-
-/* ========================================
-   MEGA FANCY EFFECTS
-   ======================================== */
-
-/* Animated gradient border card */
-.card-mega {
-  @apply relative rounded-2xl p-6 overflow-hidden;
-  background: linear-gradient(135deg, rgba(38, 38, 38, 0.9) 0%, rgba(23, 23, 23, 0.95) 100%);
-  backdrop-filter: blur(20px);
-  animation: border-glow 4s ease infinite;
-  border: 2px solid;
-}
-
-.card-mega::before {
-  content: '';
-  position: absolute;
-  inset: -50%;
-  background: conic-gradient(from 0deg, #22c55e, #3b82f6, #a855f7, #ef4444, #22c55e);
-  animation: spin-slow 8s linear infinite;
-  opacity: 0;
-  transition: opacity 0.5s ease;
-}
-
-.card-mega:hover::before {
-  opacity: 0.1;
-}
-
-/* Holographic effect */
-.holo {
-  position: relative;
-  overflow: hidden;
-}
-
-.holo::before {
-  content: '';
-  position: absolute;
-  inset: -100%;
-  background: linear-gradient(
-    45deg,
-    transparent 20%,
-    rgba(255, 255, 255, 0.1) 40%,
-    rgba(255, 255, 255, 0.2) 50%,
-    rgba(255, 255, 255, 0.1) 60%,
-    transparent 80%
-  );
-  animation: shimmer 3s ease-in-out infinite;
-}
-
-/* Scanline overlay */
-.scanlines::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.05) 2px,
-    rgba(0, 0, 0, 0.05) 4px
-  );
-  pointer-events: none;
-}
-
-/* Cyber grid background */
-.cyber-grid {
-  background-image:
-    linear-gradient(rgba(34, 197, 94, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(34, 197, 94, 0.03) 1px, transparent 1px);
-  background-size: 50px 50px;
-}
-
-/* Glitch effect on hover */
-.glitch:hover {
-  animation: glitch 0.3s ease;
-}
-
-@keyframes glitch {
-  0% { transform: translate(0); }
-  20% { transform: translate(-2px, 2px); }
-  40% { transform: translate(2px, -2px); }
-  60% { transform: translate(-2px, -2px); }
-  80% { transform: translate(2px, 2px); }
-  100% { transform: translate(0); }
-}
-
-/* Epic loading spinner */
-.spinner-epic {
-  @apply w-12 h-12 relative;
-}
-
-.spinner-epic::before,
-.spinner-epic::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 3px solid transparent;
-}
-
-.spinner-epic::before {
-  border-top-color: #22c55e;
-  animation: spin-slow 1s linear infinite;
-}
-
-.spinner-epic::after {
-  border-bottom-color: #3b82f6;
-  animation: spin-slow 1.5s linear infinite reverse;
-}
-
-/* Glowing icon wrapper */
-.icon-glow {
-  filter: drop-shadow(0 0 8px currentColor) drop-shadow(0 0 16px currentColor);
-  transition: filter 0.3s ease;
-}
-
-.icon-glow:hover {
-  filter: drop-shadow(0 0 12px currentColor) drop-shadow(0 0 24px currentColor) drop-shadow(0 0 36px currentColor);
-}
-
-/* Fade in animation for content */
-.fade-in {
-  animation: scale-in 0.5s ease-out;
-}
-
-.slide-in {
-  animation: slide-up 0.4s ease-out;
-}
-
-/* Staggered children animation */
-.stagger-children > * {
-  animation: slide-up 0.5s ease-out backwards;
-}
-
-.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
-.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
-.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
-.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
-.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
-.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
-.stagger-children > *:nth-child(7) { animation-delay: 0.35s; }
-.stagger-children > *:nth-child(8) { animation-delay: 0.4s; }
-
-/* Ultra vibrant box shadow */
-.shadow-neon-green {
-  box-shadow:
-    0 0 20px rgba(34, 197, 94, 0.4),
-    0 0 40px rgba(34, 197, 94, 0.2),
-    0 0 60px rgba(34, 197, 94, 0.1);
-}
-
-.shadow-neon-blue {
-  box-shadow:
-    0 0 20px rgba(59, 130, 246, 0.4),
-    0 0 40px rgba(59, 130, 246, 0.2),
-    0 0 60px rgba(59, 130, 246, 0.1);
-}
-
-.shadow-neon-purple {
-  box-shadow:
-    0 0 20px rgba(168, 85, 247, 0.4),
-    0 0 40px rgba(168, 85, 247, 0.2),
-    0 0 60px rgba(168, 85, 247, 0.1);
-}
-
-/* Pulsing glow animation */
-.pulse-glow-green {
-  animation: breathe 2s ease-in-out infinite;
-}
-
-/* 3D tilt effect */
-.tilt-3d {
-  transition: transform 0.3s ease;
-  transform-style: preserve-3d;
-}
-
-.tilt-3d:hover {
-  transform: perspective(1000px) rotateX(5deg) rotateY(5deg) scale(1.02);
+.glow-blue {
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
 }
