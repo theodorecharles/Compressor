@@ -196,14 +196,26 @@ export default function Libraries(): React.ReactElement {
               <>
                 {/* Progress bar */}
                 <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>Progress</span>
-                    <span>{scanStatus.processedFiles.toLocaleString()} / {scanStatus.totalFiles.toLocaleString()} files</span>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-neutral-400">Progress</span>
+                    <span className="font-medium text-white">{scanStatus.processedFiles.toLocaleString()} / {scanStatus.totalFiles.toLocaleString()} files</span>
                   </div>
-                  <div className="w-full bg-neutral-700 rounded-full h-4">
+                  <div
+                    className="w-full h-4 rounded-full overflow-hidden"
+                    style={{
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4)'
+                    }}
+                  >
                     <div
-                      className="bg-blue-500 h-4 rounded-full transition-all duration-500 flex items-center justify-center text-xs font-medium"
-                      style={{ width: `${scanStatus.totalFiles > 0 ? Math.max((scanStatus.processedFiles / scanStatus.totalFiles) * 100, 1) : 0}%` }}
+                      className="h-full rounded-full transition-all duration-500 flex items-center justify-center text-xs font-medium"
+                      style={{
+                        width: `${scanStatus.totalFiles > 0 ? Math.max((scanStatus.processedFiles / scanStatus.totalFiles) * 100, 1) : 0}%`,
+                        background: 'linear-gradient(to bottom, #3b82f6, #2563eb)',
+                        boxShadow: '0 0 12px rgba(59, 130, 246, 0.4)',
+                        textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
+                      }}
                     >
                       {scanStatus.totalFiles > 0 ? formatPercent((scanStatus.processedFiles / scanStatus.totalFiles) * 100) : '0%'}
                     </div>

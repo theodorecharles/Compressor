@@ -138,15 +138,26 @@ export default function Dashboard(): React.ReactElement {
             </button>
           </div>
           <p className="text-neutral-300 truncate">{currentEncoding.file.file_name}</p>
-          <div className="mt-2">
-            <div className="flex justify-between text-sm text-neutral-400 mb-1">
+          <div className="mt-3">
+            <div className="flex justify-between text-sm text-neutral-400 mb-2">
               <span>Progress</span>
-              <span>{formatPercent(currentEncoding.progress)}</span>
+              <span className="font-medium text-white">{formatPercent(currentEncoding.progress)}</span>
             </div>
-            <div className="w-full bg-neutral-700 rounded-full h-2">
+            <div
+              className="w-full h-3 rounded-full overflow-hidden"
+              style={{
+                background: 'rgba(0, 0, 0, 0.3)',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4)'
+              }}
+            >
               <div
-                className="bg-yellow-500 h-2 rounded-full transition-all duration-500"
-                style={{ width: `${currentEncoding.progress}%` }}
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${currentEncoding.progress}%`,
+                  background: 'linear-gradient(to bottom, #facc15, #eab308)',
+                  boxShadow: '0 0 12px rgba(234, 179, 8, 0.4)'
+                }}
               />
             </div>
           </div>
@@ -230,24 +241,29 @@ export default function Dashboard(): React.ReactElement {
                 </option>
               ))}
             </select>
-            <div className="flex gap-1 bg-neutral-700 rounded-lg p-1">
+            <div
+              className="flex gap-1 rounded-lg p-1"
+              style={{ background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 255, 255, 0.05)' }}
+            >
               <button
                 onClick={() => setChartMode('cumulative')}
-                className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                className={`px-3 py-1 text-sm rounded-md transition-all ${
                   chartMode === 'cumulative'
-                    ? 'bg-neutral-600 text-white'
-                    : 'text-neutral-400 hover:text-white'
+                    ? 'bg-white/10 text-white shadow-sm'
+                    : 'text-neutral-400 hover:text-white hover:bg-white/5'
                 }`}
+                style={chartMode === 'cumulative' ? { border: '1px solid rgba(255, 255, 255, 0.1)' } : {}}
               >
                 Cumulative
               </button>
               <button
                 onClick={() => setChartMode('period')}
-                className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                className={`px-3 py-1 text-sm rounded-md transition-all ${
                   chartMode === 'period'
-                    ? 'bg-neutral-600 text-white'
-                    : 'text-neutral-400 hover:text-white'
+                    ? 'bg-white/10 text-white shadow-sm'
+                    : 'text-neutral-400 hover:text-white hover:bg-white/5'
                 }`}
+                style={chartMode === 'period' ? { border: '1px solid rgba(255, 255, 255, 0.1)' } : {}}
               >
                 {chartData[0]?.granularity === 'hourly' ? 'Per Hour' : 'Per Day'}
               </button>
@@ -273,7 +289,12 @@ export default function Dashboard(): React.ReactElement {
                 tickFormatter={(value: number) => value.toFixed(chartMode === 'period' ? 1 : 0)}
               />
               <Tooltip
-                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }}
+                contentStyle={{
+                  backgroundColor: 'rgba(23, 23, 23, 0.95)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
+                }}
                 formatter={(value: number) => [
                   `${value.toFixed(2)} GB`,
                   chartMode === 'cumulative'
