@@ -2,7 +2,7 @@
 
 A Docker-based media transcoding application that uses NVIDIA GPU hardware acceleration to compress video files to HEVC/H.265 format. Designed for home media servers (especially Unraid) to reduce storage usage while maintaining quality.
 
-![Dashboard Screenshot](compressor_icon.png)
+![Dashboard Screenshot](screenshot.png)
 
 ## Features
 
@@ -91,8 +91,8 @@ services:
 
 ### Transcoding Strategy
 
-- **Target Bitrate**: Original bitrate / 2 (configurable)
-- **Fallback**: CRF 24 if bitrate cannot be detected
+- **Target Bitrate**: Original bitrate / 2 (configurable in Settings)
+- **Fallback**: CRF 24 if bitrate cannot be detected (configurable in Settings)
 - **4K Content**: Scaled down to 1080p
 - **HDR Content**: Tonemapped to SDR
 - **Output Format**: MKV (preserves all audio and subtitle tracks)
