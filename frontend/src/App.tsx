@@ -61,7 +61,7 @@ function App(): React.ReactElement {
     <div className="h-screen flex overflow-hidden">
       {/* Mobile header */}
       <div
-        className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-b from-neutral-800 to-neutral-800/95 px-4 py-3 flex items-center gap-3 md:hidden backdrop-blur-sm"
+        className="mobile-header fixed top-0 left-0 right-0 z-40 bg-gradient-to-b from-neutral-800 to-neutral-800/95 px-4 pb-3 flex items-center gap-3 md:hidden backdrop-blur-sm"
         style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}
       >
         <button
@@ -88,8 +88,8 @@ function App(): React.ReactElement {
       {/* Sidebar */}
       <nav
         className={`
-          fixed md:static inset-y-0 left-0 z-50
-          w-64 bg-gradient-to-b from-neutral-800 to-neutral-900 p-4 flex flex-col
+          sidebar fixed md:static inset-y-0 left-0 z-50
+          w-64 bg-gradient-to-b from-neutral-800 to-neutral-900 px-4 pb-4 flex flex-col
           transform transition-transform duration-200 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           md:translate-x-0
@@ -134,7 +134,7 @@ function App(): React.ReactElement {
       </nav>
 
       {/* Main content */}
-      <main className="flex-1 p-4 md:p-6 overflow-y-auto pt-20 md:pt-6">
+      <main className="main-content flex-1 p-4 md:p-6 overflow-y-auto">
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/libraries" element={<Libraries />} />

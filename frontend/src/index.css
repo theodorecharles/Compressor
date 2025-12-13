@@ -2,8 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
+/* iOS safe area support for PWA */
+:root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+}
+
 body {
   @apply bg-neutral-900 text-neutral-100;
+}
+
+/* Mobile header with safe area */
+.mobile-header {
+  padding-top: calc(var(--safe-area-top) + 0.75rem);
+}
+
+/* Sidebar with safe area */
+.sidebar {
+  padding-top: calc(var(--safe-area-top) + 1rem);
+}
+
+@media (min-width: 768px) {
+  .sidebar {
+    padding-top: 1rem;
+  }
+}
+
+/* Main content with safe area offset for mobile header */
+.main-content {
+  padding-top: calc(var(--safe-area-top) + 5rem);
+}
+
+@media (min-width: 768px) {
+  .main-content {
+    padding-top: 1.5rem;
+  }
 }
 
 /* Cards with glossy highlight border */
